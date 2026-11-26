@@ -2,499 +2,172 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0a2e6e" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>دايركت | DIRECT</title>
+  
+  <!-- مكتبات التصميم والخطوط -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
-  <!-- مكتبات الفواتير -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { blue: '#0a2e6e', lightBlue: '#1d4ed8', orange: '#f7931e', bg: '#f8fafc' }
+          },
+          fontFamily: { sans: ['Tajawal', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
-
-    :root {
-      --primary: #0a2e6e;
-      --primary-light: #1d4ed8;
-      --accent: #f7931e;
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #1e293b;
-      --text-light: #64748b;
-      --border: #e2e8f0;
-      --radius: 16px;
-      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      font-family: 'Tajawal', sans-serif;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding-bottom: 80px;
-    }
-
-    /* --- Splash Screen --- */
-    #splash {
-      position: fixed; inset: 0; background: #0a2e6e;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 9999; transition: opacity 0.4s;
-    }
-    #splash.hide { opacity: 0; pointer-events: none; }
-    #splash img { width: 120px; margin-bottom: 20px; border-radius: 20px; }
-    .loader-bar { width: 200px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
-    .loader-bar div { width: 50%; height: 100%; background: var(--accent); border-radius: 3px; animation: load 1.5s ease-in-out infinite; }
-    @keyframes load { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
-
-    /* --- Auth Screens --- */
-    .auth-screen {
-      min-height: 100vh; display: none; flex-direction: column;
-      align-items: center; justify-content: center; padding: 24px;
-      background: linear-gradient(180deg, #0a2e6e 0%, #0a2e6e 30%, var(--bg) 30%);
-    }
-    .auth-screen.active { display: flex; }
-    .auth-card {
-      background: var(--card); border-radius: 24px; padding: 32px 24px;
-      width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-    .auth-logo { width: 100px; margin: 0 auto 16px; display: block; border-radius: 12px; }
-    .auth-title { text-align: center; font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
-    .auth-subtitle { text-align: center; color: var(--text-light); font-size: 0.9rem; margin-bottom: 24px; }
-
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; color: var(--text); }
-    .form-group input, .form-group select, .form-group textarea {
-      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border);
-      border-radius: 12px; font-size: 1rem; background: #f8fafc; transition: 0.2s;
-    }
-    .form-group input:focus { outline: none; border-color: var(--primary-light); background: #fff; }
-    
-    .btn {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 14px 24px; border: none; border-radius: 12px; font-size: 1rem;
-      font-weight: 700; cursor: pointer; transition: 0.2s; width: 100%;
-    }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:active { transform: scale(0.98); }
-    .btn-accent { background: var(--accent); color: #fff; }
-    .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
-    .btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; }
-    .btn-danger { background: #ef4444; color: #fff; }
-
-    .auth-switch { text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--text-light); }
-    .auth-switch a { color: var(--primary-light); font-weight: 700; text-decoration: none; }
-
-    /* --- Main App Layout --- */
-    #app { display: none; }
-    #app.active { display: block; }
-
-    /* Header */
-    .app-header {
-      background: #0a2e6e; color: #fff; padding: 16px; display: flex;
-      align-items: center; justify-content: space-between; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
-      position: relative;
-    }
-    .app-header .logo-area { display: flex; align-items: center; gap: 10px; }
-    .app-header .logo-area img { width: 40px; height: 40px; border-radius: 8px; background: #fff; }
-    .app-header .logo-area span { font-weight: 800; font-size: 1.2rem; }
-    .header-btn { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; position: relative; }
-    .header-btn .dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
-
-    /* Search Bar */
-    .search-container { padding: 0 16px; margin-top: -20px; position: relative; z-index: 10; }
-    .search-box {
-      background: #fff; border-radius: 12px; padding: 12px 16px; display: flex;
-      align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    .search-box input { border: none; outline: none; flex: 1; font-family: inherit; font-size: 0.95rem; }
-
-    /* Hero Banner */
-    .hero-banner {
-      background: linear-gradient(135deg, #0a2e6e, #1d4ed8);
-      margin: 16px; border-radius: 20px; padding: 24px; color: #fff;
-      box-shadow: 0 10px 20px rgba(10,46,110,0.2); position: relative; overflow: hidden;
-    }
-    .hero-banner h2 { font-size: 1.4rem; margin-bottom: 8px; font-weight: 800; }
-    .hero-banner p { font-size: 0.9rem; opacity: 0.9; }
-
-    /* Step Cards */
-    .steps-container { display: flex; flex-direction: column; gap: 12px; padding: 0 16px; margin-top: 16px; }
-    .step-card {
-      background: #fff; border-radius: 16px; padding: 16px; display: flex;
-      align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .step-icon {
-      width: 48px; height: 48px; border-radius: 12px; background: #eff6ff;
-      display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--primary);
-    }
-    .step-text h3 { font-size: 1rem; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
-    .step-text p { font-size: 0.85rem; color: var(--text-light); }
-
-    /* Categories */
-    .section-title { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 24px 16px 12px; }
-    .categories-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
-    .cat-card {
-      background: #fff; border-radius: 16px; padding: 20px; text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: 0.2s;
-      display: flex; flex-direction: column; align-items: center; gap: 12px;
-    }
-    .cat-card:active { transform: scale(0.97); }
-    .cat-icon {
-      width: 50px; height: 50px; border-radius: 16px; background: var(--primary);
-      display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff;
-    }
-    .cat-name { font-weight: 700; font-size: 0.95rem; color: var(--text); }
-
-    /* Products */
-    .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
-    .product-card {
-      background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      display: flex; flex-direction: column; text-align: center;
-    }
-    .product-card img { width: 100%; height: 100px; object-fit: contain; border-radius: 8px; margin-bottom: 8px; }
-    .product-card .name { font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
-    .product-card .price { color: var(--accent); font-weight: 800; font-size: 1rem; margin-bottom: 8px; }
-    .product-card .add-btn {
-      background: var(--primary); color: #fff; border: none; border-radius: 8px;
-      padding: 8px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: auto;
-    }
-
-    /* Custom Request Box */
-    .custom-request {
-      margin: 24px 16px; background: #fff; border-radius: 16px; padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px dashed var(--primary-light);
-    }
-    .custom-request h3 { font-size: 1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
-    .custom-request p { font-size: 0.85rem; color: var(--text-light); margin-bottom: 12px; }
-    .custom-request textarea {
-      width: 100%; border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px; font-family: inherit; min-height: 80px; margin-bottom: 12px; resize: none;
-    }
-    .custom-request button { width: 100%; }
-
-    /* Bottom Nav */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
-      display: flex; justify-content: space-around; padding: 12px 0 24px;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100;
-    }
-    .nav-item {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      background: none; border: none; color: var(--text-light); font-size: 0.75rem;
-      font-weight: 700; cursor: pointer; position: relative;
-    }
-    .nav-item .icon { font-size: 1.4rem; }
-    .nav-item.active { color: var(--primary); }
-    .badge {
-      position: absolute; top: -4px; right: -8px; background: var(--accent);
-      color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px;
-    }
-
-    /* Pages */
-    .page { display: none; animation: fade 0.3s; }
-    .page.active { display: block; }
-    @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Cart & Orders & Profile */
-    .cart-container, .orders-container, .profile-container { padding: 16px; }
-    .card-item { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .card-item img { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
-    .card-item-info { flex: 1; }
-    .card-item-info h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
-    .card-item-info .price { color: var(--accent); font-weight: 800; }
-    .qty-controls { display: flex; align-items: center; gap: 8px; background: #f1f5f9; border-radius: 8px; padding: 4px; }
-    .qty-controls button { width: 28px; height: 28px; border-radius: 6px; border: none; background: #fff; font-weight: 700; cursor: pointer; }
-    
-    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); }
-    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
-    
-    .total-box { background: #fff; border-radius: 16px; padding: 20px; margin-top: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .total-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: 700; }
-    .total-row.final { font-size: 1.2rem; color: var(--primary); border-top: 1px solid var(--border); padding-top: 12px; }
-
-    /* Modals */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; display: none; align-items: flex-end; justify-content: center; }
-    .modal-overlay.active { display: flex; }
-    .modal { background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 24px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .modal-header h3 { color: var(--primary); font-size: 1.2rem; }
-    .modal-close { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: 700; }
-
-    /* Toast */
-    #toast {
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px);
-      background: var(--primary); color: #fff; padding: 12px 24px; border-radius: 12px;
-      font-weight: 700; z-index: 1000; opacity: 0; transition: 0.3s; pointer-events: none;
-    }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #toast.error { background: #ef4444; }
-    #toast.success { background: #10b981; }
-
-    /* Admin */
-    .admin-menu { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
-    .admin-btn { background: #fff; border: none; padding: 20px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; font-weight: 700; color: var(--text); }
-    .admin-btn span { font-size: 1.8rem; }
-    .admin-section { display: none; padding: 16px; }
-    .admin-section.active { display: block; }
-    .stat-card { background: #fff; padding: 16px; border-radius: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .stat-card .val { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
-    .stat-card .lbl { font-size: 0.8rem; color: var(--text-light); }
+    body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #0a2e6e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <!-- شعار التطبيق (Base64 مدمج) -->
-  <script>
-    // الشعار المدمج (صورة افتراضية سريعة بدلاً من ملف خارجي لضمان عدم ظهور شاشة بيضاء)
-    // في حال أردت استخدام صورتك الخاصة، يمكنك استبدال الرابط هنا بصورة Base64
-    const LOGO_URL = "https://i.ibb.co/6PZ8Z5B/logo.png"; 
-  </script>
-
-  <!-- Splash -->
-  <div id="splash">
-    <img id="splashLogo" src="" alt="Direct" />
-    <div class="loader-bar"><div></div></div>
+  <!-- شاشة التحميل -->
+  <div id="loadingScreen" class="fixed inset-0 bg-brand-blue flex flex-col items-center justify-center z-50">
+    <img src="logo.png" alt="Direct" class="w-32 mb-4 rounded-2xl bg-white p-2" onerror="this.style.display='none'">
+    <div class="loader"></div>
   </div>
 
-  <div id="toast"></div>
-
   <!-- شاشة تسجيل الدخول -->
-  <div id="loginScreen" class="auth-screen">
-    <div class="auth-card">
-      <img class="auth-logo" id="loginLogo" src="" alt="Direct" />
-      <h1 class="auth-title">مرحباً بك في دايركت</h1>
-      <p class="auth-subtitle">طلبك يوصل مباشرة</p>
-      <div class="form-group">
-        <label>الاسم</label>
-        <input type="text" id="loginName" placeholder="اسمك الكريم" />
+  <div id="loginScreen" class="hidden min-h-screen items-center justify-center bg-brand-blue p-4">
+    <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-8">
+      <div class="text-center mb-8">
+        <img src="logo.png" alt="Direct Logo" class="w-24 mx-auto mb-4 rounded-2xl" onerror="this.src='https://via.placeholder.com/100?text=Logo'">
+        <h1 class="text-2xl font-bold text-brand-blue">مرحباً بك في دايركت</h1>
+        <p class="text-gray-500 mt-1">طلبك يوصل مباشرة</p>
       </div>
-      <div class="form-group">
-        <label>رقم الهاتف</label>
-        <input type="tel" id="loginPhone" placeholder="01xxxxxxxxx" dir="ltr" />
+      <div id="loginError" class="hidden bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center"></div>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold mb-1">البريد الإلكتروني</label>
+          <input type="email" id="loginEmail" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="admin@direct.com">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">كلمة المرور</label>
+          <input type="password" id="loginPassword" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="••••••••">
+        </div>
+        <button type="submit" class="w-full bg-brand-blue text-white font-bold py-3 rounded-xl hover:bg-brand-lightBlue transition flex items-center justify-center gap-2">
+          تسجيل الدخول
+        </button>
+      </form>
+      <div class="text-center mt-6 text-sm text-gray-600">
+        ليس لديك حساب؟ <a href="#" onclick="toggleScreens('register')" class="text-brand-blue font-bold hover:underline">إنشاء حساب جديد</a>
       </div>
-      <div class="form-group">
-        <label>كلمة السر</label>
-        <input type="password" id="loginPassword" placeholder="••••••••" />
-      </div>
-      <button class="btn btn-primary" onclick="handleLogin()">دخول</button>
-      <div class="auth-switch">ليس لديك حساب؟ <a href="#" onclick="showScreen('registerScreen');return false;">إنشاء حساب</a></div>
     </div>
   </div>
 
   <!-- شاشة إنشاء حساب -->
-  <div id="registerScreen" class="auth-screen">
-    <div class="auth-card">
-      <img class="auth-logo" id="regLogo" src="" alt="Direct" />
-      <h1 class="auth-title">إنشاء حساب جديد</h1>
-      <div class="form-group">
-        <label>الاسم بالكامل</label>
-        <input type="text" id="regName" placeholder="الاسم" />
+  <div id="registerScreen" class="hidden min-h-screen items-center justify-center bg-brand-blue p-4">
+    <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-8">
+      <div class="text-center mb-6">
+        <img src="logo.png" alt="Direct Logo" class="w-20 mx-auto mb-3 rounded-xl" onerror="this.src='https://via.placeholder.com/100?text=Logo'">
+        <h1 class="text-2xl font-bold text-brand-blue">إنشاء حساب</h1>
       </div>
-      <div class="form-group">
-        <label>رقم الهاتف (11 رقم)</label>
-        <input type="tel" id="regPhone" placeholder="01xxxxxxxxx" dir="ltr" />
+      <div id="registerError" class="hidden bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center"></div>
+      <form id="registerForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold mb-1">الاسم بالكامل</label>
+          <input type="text" id="regName" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="اسمك الكريم">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">رقم الهاتف</label>
+          <input type="tel" id="regPhone" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="01xxxxxxxxx">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">البريد الإلكتروني</label>
+          <input type="email" id="regEmail" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="email@example.com">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">كلمة المرور</label>
+          <input type="password" id="regPassword" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="••••••••">
+        </div>
+        <button type="submit" class="w-full bg-brand-blue text-white font-bold py-3 rounded-xl hover:bg-brand-lightBlue transition flex items-center justify-center gap-2">
+          إنشاء الحساب
+        </button>
+      </form>
+      <div class="text-center mt-6 text-sm text-gray-600">
+        لديك حساب بالفعل؟ <a href="#" onclick="toggleScreens('login')" class="text-brand-blue font-bold hover:underline">تسجيل الدخول</a>
       </div>
-      <div class="form-group">
-        <label>كلمة السر</label>
-        <input type="password" id="regPassword" placeholder="6 أحرف على الأقل" />
-      </div>
-      <div class="form-group">
-        <label>العنوان بالتفصيل</label>
-        <textarea id="regAddress" placeholder="المحافظة - المدينة - الشارع - رقم المبنى"></textarea>
-      </div>
-      <button class="btn btn-primary" onclick="handleRegister()">تسجيل</button>
-      <div class="auth-switch">لديك حساب؟ <a href="#" onclick="showScreen('loginScreen');return false;">تسجيل الدخول</a></div>
     </div>
   </div>
 
-  <!-- التطبيق الرئيسي -->
-  <div id="app">
-    
-    <!-- الصفحة الرئيسية -->
-    <div id="page-home" class="page active">
-      <header class="app-header">
-        <div class="logo-area">
-          <img id="headerLogo" src="" alt="Logo" />
-          <span id="headerTitle">دايركت</span>
+  <!-- واجهة التطبيق (الرئيسية) -->
+  <div id="appScreen" class="hidden min-h-screen pb-20 bg-brand-bg">
+    <header class="bg-brand-blue text-white p-4 rounded-b-3xl shadow-md sticky top-0 z-50">
+      <div class="flex justify-between items-center max-w-2xl mx-auto">
+        <div class="flex items-center gap-2">
+          <img src="logo.png" alt="Logo" class="w-10 h-10 bg-white rounded-lg p-1" onerror="this.style.display='none'">
+          <span class="font-bold text-xl">دايركت</span>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="header-btn" onclick="navigateTo('notifications')">🔔<span class="dot hidden" id="notifDot"></span></button>
-          <button class="header-btn hidden" id="adminBtn" onclick="navigateTo('admin')">⚙️</button>
-        </div>
-      </header>
+        <button class="p-2 bg-white/10 rounded-full relative">
+          🔔
+        </button>
+      </div>
+    </header>
 
-      <div class="search-container">
-        <div class="search-box">
-          <span>🔍</span>
-          <input type="text" placeholder="ابحث عن منتج..." id="searchInput" oninput="searchProducts()" />
-        </div>
+    <main class="max-w-2xl mx-auto p-4 space-y-6">
+      <!-- صورة الغلاف -->
+      <div class="relative rounded-2xl overflow-hidden shadow-lg bg-white">
+        <img src="hero-banner.jpg" alt="Direct Features" class="w-full h-auto object-cover" onerror="this.src='https://via.placeholder.com/600x300/0a2e6e/ffffff?text=Direct+Banner'">
       </div>
 
-      <div class="hero-banner">
-        <h2>أهلاً <span id="welcomeName">بك</span></h2>
-        <p>طلبك يوصل مباشرة</p>
-        <p style="margin-top:4px;font-size:0.8rem;">بقالة، خضار، مستلزمات البيت — من غير ما تنزل.</p>
-      </div>
-
-      <div class="steps-container">
-        <div class="step-card">
-          <div class="step-icon">🛍️</div>
-          <div class="step-text"><h3>اختر</h3><p>من الأقسام، أو اكتب اللي مش موجود.</p></div>
+      <div class="flex justify-between items-end">
+        <div>
+          <h2 class="text-xl font-bold text-brand-blue">أهلاً <span id="welcomeName">بك</span> 👋</h2>
+          <p class="text-gray-500 text-sm">ماذا تحتاج اليوم؟</p>
         </div>
-        <div class="step-card">
-          <div class="step-icon">📍</div>
-          <div class="step-text"><h3>أكد</h3><p>العنوان والسلة، وطلبك يتسجل.</p></div>
-        </div>
-        <div class="step-card">
-          <div class="step-icon">🛵</div>
-          <div class="step-text"><h3>يوصل</h3><p>نجهز الطلب ويطالعه المندوب.</p></div>
-        </div>
+        <button id="logoutBtn" class="text-sm text-red-500 font-bold hover:underline">خروج</button>
       </div>
 
-      <div class="section-title">الأقسام</div>
-      <div class="categories-grid" id="categoriesGrid"></div>
-
-      <div class="custom-request">
-        <h3>طلب مش في القائمة</h3>
-        <p>اكتب أي حاجة محتاجها، وفريق دايركت يرد عليك.</p>
-        <textarea id="customRequestText" placeholder="مثال: كيس أرز 5 كيلو، شامبو، علبة تونة..."></textarea>
-        <button class="btn btn-accent" onclick="submitCustomRequest()">إرسال الطلب</button>
+      <div class="bg-white p-4 rounded-2xl shadow-sm">
+        <h3 class="font-bold text-brand-blue mb-3">الأقسام</h3>
+        <div class="text-center text-gray-400 py-6 text-sm">سيتم عرض الأقسام هنا في المرحلة القادمة</div>
       </div>
-
-      <div class="section-title">المنتجات المميزة</div>
-      <div class="products-grid" id="featuredProducts"></div>
-    </div>
-
-    <!-- صفحة المنتجات -->
-    <div id="page-category" class="page">
-      <header class="app-header">
-        <div class="logo-area">
-          <button class="header-btn" onclick="navigateTo('home')">→</button>
-          <span id="catHeaderTitle">المنتجات</span>
-        </div>
-      </header>
-      <div class="products-grid" id="categoryProducts" style="margin-top:16px;"></div>
-    </div>
-
-    <!-- السلة -->
-    <div id="page-cart" class="page">
-      <header class="app-header"><div class="logo-area"><span>🛒 السلة</span></div></header>
-      <div class="cart-container">
-        <div id="cartItems"></div>
-        <div id="cartEmpty" class="empty-state hidden"><div class="icon">🛒</div><p>السلة فارغة</p></div>
-        <div id="cartSummary" class="hidden">
-          <div class="total-box">
-            <div class="total-row"><span>المجموع</span><span id="subtotal">0 ج.م</span></div>
-            <div class="total-row final"><span>الإجمالي</span><span id="total">0 ج.م</span></div>
-            <button class="btn btn-primary" style="margin-top:16px;" onclick="placeOrder()">تأكيد الطلب</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- الطلبات -->
-    <div id="page-orders" class="page">
-      <header class="app-header"><div class="logo-area"><span>📋 طلباتي</span></div></header>
-      <div class="orders-container">
-        <div id="ordersList"></div>
-        <div id="ordersEmpty" class="empty-state hidden"><div class="icon">📋</div><p>لا توجد طلبات سابقة</p></div>
-      </div>
-    </div>
-
-    <!-- الإشعارات -->
-    <div id="page-notifications" class="page">
-      <header class="app-header"><div class="logo-area"><span>🔔 الإشعارات</span></div></header>
-      <div class="orders-container" id="notifList"></div>
-    </div>
-
-    <!-- الحساب -->
-    <div id="page-profile" class="page">
-      <header class="app-header"><div class="logo-area"><span>👤 حسابي</span></div></header>
-      <div class="profile-container">
-        <div style="text-align:center;margin-bottom:24px;">
-          <div style="width:80px;height:80px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 12px;" id="profileAvatar">؟</div>
-          <h3 id="profileName" style="font-size:1.2rem;">-</h3>
-          <p id="profilePhone" style="color:var(--text-light);">-</p>
-        </div>
-        <div class="form-group">
-          <label>عنوان التوصيل</label>
-          <textarea id="profileAddress" rows="2"></textarea>
-        </div>
-        <button class="btn btn-primary" onclick="updateProfile()">حفظ العنوان</button>
-        <button class="btn btn-outline" style="margin-top:12px;" onclick="handleLogout()">تسجيل الخروج</button>
-      </div>
-    </div>
-
-    <!-- لوحة التحكم (الأدمن) -->
-    <div id="page-admin" class="page">
-      <header class="app-header"><div class="logo-area"><span>⚙️ لوحة التحكم</span></div></header>
-      <div class="admin-menu">
-        <button class="admin-btn" onclick="showAdminSection('stats')"><span>📊</span>الإحصائيات</button>
-        <button class="admin-btn" onclick="showAdminSection('orders')"><span>📦</span>الطلبات</button>
-        <button class="admin-btn" onclick="showAdminSection('products')"><span>🛍️</span>المنتجات</button>
-        <button class="admin-btn" onclick="showAdminSection('custom')"><span>✏️</span>الطلبات المخصصة</button>
-      </div>
-      <div id="admin-stats" class="admin-section"><div class="stats-grid" id="statsGrid"></div></div>
-      <div id="admin-orders" class="admin-section">
-        <h3 style="margin-bottom:12px;color:var(--primary);">إدارة الطلبات</h3>
-        <div id="adminOrdersList"></div>
-      </div>
-      <div id="admin-products" class="admin-section">
-        <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-          <h3 style="color:var(--primary);">المنتجات</h3>
-          <button class="btn btn-accent btn-sm" onclick="openProductModal()">+ إضافة</button>
-        </div>
-        <div id="adminProductsList"></div>
-      </div>
-      <div id="admin-custom" class="admin-section">
-        <h3 style="color:var(--primary);margin-bottom:12px;">الطلبات المخصصة</h3>
-        <div id="adminCustomList"></div>
-      </div>
-    </div>
+    </main>
 
     <!-- شريط التنقل السفلي -->
-    <nav class="bottom-nav">
-      <button class="nav-item active" data-page="home" onclick="navigateTo('home')"><span class="icon">🏠</span>الرئيسية</button>
-      <button class="nav-item" data-page="cart" onclick="navigateTo('cart')"><span class="icon">🛒</span>السلة<span class="badge hidden" id="cartBadge">0</span></button>
-      <button class="nav-item" data-page="orders" onclick="navigateTo('orders')"><span class="icon">📋</span>طلباتي</button>
-      <button class="nav-item" data-page="profile" onclick="navigateTo('profile')"><span class="icon">👤</span>حسابي</button>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50">
+      <div class="flex justify-around items-center max-w-2xl mx-auto py-3 text-gray-500">
+        <a href="#" class="flex flex-col items-center text-brand-blue">
+          <span class="text-2xl">🏠</span>
+          <span class="text-xs font-bold mt-1">الرئيسية</span>
+        </a>
+        <a href="#" class="flex flex-col items-center hover:text-brand-blue">
+          <span class="text-2xl">🛒</span>
+          <span class="text-xs mt-1">السلة</span>
+        </a>
+        <a href="#" class="flex flex-col items-center hover:text-brand-blue">
+          <span class="text-2xl">📋</span>
+          <span class="text-xs mt-1">طلباتي</span>
+        </a>
+        <a href="#" class="flex flex-col items-center hover:text-brand-blue">
+          <span class="text-2xl">👤</span>
+          <span class="text-xs mt-1">حسابي</span>
+        </a>
+      </div>
     </nav>
   </div>
 
-  <!-- نافذة إضافة منتج -->
-  <div class="modal-overlay" id="productModal">
-    <div class="modal">
-      <div class="modal-header"><h3 id="productModalTitle">إضافة منتج</h3><button class="modal-close" onclick="closeModal('productModal')">✕</button></div>
-      <input type="hidden" id="editProductId" />
-      <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName" /></div>
-      <div class="form-group"><label>السعر</label><input type="number" id="prodPrice" /></div>
-      <div class="form-group"><label>القسم</label><select id="prodCategory"></select></div>
-      <div class="form-group"><label>رابط الصورة (اختياري)</label><input type="text" id="prodImage" dir="ltr" /></div>
-      <button class="btn btn-primary" onclick="saveProduct()">حفظ</button>
-    </div>
-  </div>
-
-  <!-- Firebase SDK -->
+  <!-- سكربت Firebase (الربط بقاعدة البيانات) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-    import { getDatabase, ref, set, push, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
+    // ⚠️ دي مفاتيح مشروعك اللي أنت عملته قبل كده، مش محتاج تغيرها
     const firebaseConfig = {
       apiKey: "AIzaSyAUn6EhDFqef6I81EhNTZTB-qZRQHl7a1Q",
       authDomain: "direct-1-c93b9.firebaseapp.com",
-      databaseURL: "https://direct-1-c93b9-default-rtdb.firebaseio.com",
       projectId: "direct-1-c93b9",
       storageBucket: "direct-1-c93b9.firebasestorage.app",
       messagingSenderId: "216801978683",
@@ -503,424 +176,91 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getDatabase(app);
+    const db = getFirestore(app);
 
-    window.firebaseAuth = auth;
-    window.firebaseDb = db;
-    window.FB = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, ref, set, push, get, update, remove, onValue };
-    window.firebaseReady = true;
-    if (window.initApp) window.initApp();
-  </script>
-
-  <!-- App Logic -->
-  <script>
-    // ====== إعدادات عامة ======
-    const SUPER_ADMIN_PHONE = '01283571163';
-    const LOGO = "https://i.ibb.co/6PZ8Z5B/logo.png"; // رابط مؤقت، يمكنك تغييره
-    
-    // تعيين الشعار في كل مكان
-    document.getElementById('splashLogo').src = LOGO;
-    document.getElementById('loginLogo').src = LOGO;
-    document.getElementById('regLogo').src = LOGO;
-    document.getElementById('headerLogo').src = LOGO;
-
-    // ====== المتغيرات ======
-    let currentUser = null, userData = null;
-    let cart = JSON.parse(localStorage.getItem('direct_cart') || '[]');
-    let categories = [], products = [], notifications = [];
-    let currentPage = 'home';
-
-    const DEFAULT_CATS = [
-      { id: 'food', name: 'منتجات غذائية', icon: '🍚' },
-      { id: 'veg', name: 'خضروات وفاكهة', icon: '🍎' },
-      { id: 'medical', name: 'مستلزمات طبية', icon: '💊' },
-      { id: 'snacks', name: 'تسالي ومحمصات', icon: '🥜' }
-    ];
-
-    // ====== دوال مساعدة ======
-    const toast = (msg, type = '') => {
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.className = 'show ' + type;
-      setTimeout(() => t.className = '', 3000);
-    };
-    const showScreen = (id) => {
-      document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-    };
-    const formatPrice = (n) => Number(n).toFixed(2) + ' ج.م';
-    const normPhone = (p) => (p || '').replace(/\D/g, '').replace(/^0+/, '');
-    const phoneToEmail = (p) => normPhone(p) + '@direct.local';
-    const isSuper = (p) => normPhone(p) === normPhone(SUPER_ADMIN_PHONE);
-    const statusText = (s) => ({ pending: 'قيد الانتظار', preparing: 'قيد التجهيز', delivering: 'قيد التوصيل', delivered: 'تم التسليم', cancelled: 'ملغي' }[s] || s);
-
-    // ====== التنقل ======
-    function navigateTo(page) {
-      currentPage = page;
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      const el = document.getElementById('page-' + page);
-      if (el) el.classList.add('active');
-      
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
-
-      if (page === 'cart') renderCart();
-      if (page === 'orders') loadUserOrders();
-      if (page === 'profile') renderProfile();
-      if (page === 'notifications') renderNotifications();
-    }
-
-    // ====== المصادقة ======
-    async function handleRegister() {
-      const name = document.getElementById('regName').value.trim();
-      const phone = document.getElementById('regPhone').value.trim();
-      const password = document.getElementById('regPassword').value;
-      const address = document.getElementById('regAddress').value.trim();
-      if (!name || !phone || !password) return toast('أكمل البيانات', 'error');
-      if (phone.length < 11) return toast('رقم الهاتف غير صحيح', 'error');
-
-      try {
-        const cred = await window.FB.createUserWithEmailAndPassword(window.firebaseAuth, phoneToEmail(phone), password);
-        const role = isSuper(phone) ? 'admin' : 'customer';
-        await window.FB.set(window.FB.ref(window.firebaseDb, 'users/' + cred.user.uid), {
-          name, phone, address, role, createdAt: Date.now()
-        });
-        toast('تم إنشاء الحساب', 'success');
-      } catch (e) { toast('رقم الهاتف مسجل بالفعل', 'error'); }
-    }
-
-    async function handleLogin() {
-      const phone = document.getElementById('loginPhone').value.trim();
-      const password = document.getElementById('loginPassword').value;
-      if (!phone || !password) return toast('أدخل البيانات', 'error');
-      try {
-        await window.FB.signInWithEmailAndPassword(window.firebaseAuth, phoneToEmail(phone), password);
-      } catch (e) { toast('بيانات الدخول غير صحيحة', 'error'); }
-    }
-
-    async function handleLogout() {
-      await window.FB.signOut(window.firebaseAuth);
-    }
-
-    // ====== تحميل البيانات ======
-    async function loadUserData(uid) {
-      const snap = await window.FB.get(window.FB.ref(window.firebaseDb, 'users/' + uid));
-      if (snap.exists()) {
-        userData = snap.val();
-        document.getElementById('welcomeName').textContent = userData.name;
-        if (userData.role === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
+    // دالة تبديل الشاشات
+    window.toggleScreens = (screenName) => {
+      document.querySelectorAll('#loadingScreen, #loginScreen, #registerScreen, #appScreen').forEach(s => s.classList.add('hidden'));
+      const target = document.getElementById(screenName + 'Screen');
+      if (target) {
+        target.classList.remove('hidden');
+        if(screenName !== 'loading') target.classList.add('flex');
       }
-    }
+    };
 
-    async function loadCategories() {
-      const snap = await window.FB.get(window.FB.ref(window.firebaseDb, 'categories'));
-      categories = [];
-      if (snap.exists()) {
-        snap.forEach(c => categories.push({ id: c.key, ...c.val() }));
+    // دالة إظهار الأخطاء
+    window.showError = (id, msg) => {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 4000);
+    };
+
+    // التحقق من حالة الدخول
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const firstName = docSnap.data().name.split(' ')[0];
+            document.getElementById('welcomeName').textContent = firstName;
+          }
+          toggleScreens('app');
+        } catch (e) {
+          console.error(e);
+          toggleScreens('app');
+        }
       } else {
-        for (const c of DEFAULT_CATS) {
-          await window.FB.set(window.FB.ref(window.firebaseDb, 'categories/' + c.id), c);
-          categories.push(c);
-        }
+        toggleScreens('login');
       }
-      renderHome();
-    }
+    });
 
-    async function loadProducts() {
-      const snap = await window.FB.get(window.FB.ref(window.firebaseDb, 'products'));
-      products = [];
-      if (snap.exists()) snap.forEach(p => products.push({ id: p.key, ...p.val() }));
-      renderHome();
-    }
-
-    // ====== العرض ======
-    function renderHome() {
-      const grid = document.getElementById('categoriesGrid');
-      grid.innerHTML = categories.map(c => `
-        <div class="cat-card" onclick="openCategory('${c.id}', '${c.name}')">
-          <div class="cat-icon">${c.icon || '📦'}</div>
-          <div class="cat-name">${c.name}</div>
-        </div>
-      `).join('');
-
-      const fp = document.getElementById('featuredProducts');
-      fp.innerHTML = products.slice(0, 4).map(p => `
-        <div class="product-card">
-          ${p.image ? `<img src="${p.image}">` : `<div style="height:100px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>`}
-          <div class="name">${p.name}</div>
-          <div class="price">${formatPrice(p.price)}</div>
-          <button class="add-btn" onclick='addToCart(${JSON.stringify({id:p.id,name:p.name,price:p.price,image:p.image||""})})'>أضف للسلة</button>
-        </div>
-      `).join('');
-    }
-
-    function openCategory(id, name) {
-      document.getElementById('catHeaderTitle').textContent = name;
-      const filtered = products.filter(p => p.categoryId === id);
-      document.getElementById('categoryProducts').innerHTML = filtered.map(p => `
-        <div class="product-card">
-          ${p.image ? `<img src="${p.image}">` : `<div style="height:100px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>`}
-          <div class="name">${p.name}</div>
-          <div class="price">${formatPrice(p.price)}</div>
-          <button class="add-btn" onclick='addToCart(${JSON.stringify({id:p.id,name:p.name,price:p.price,image:p.image||""})})'>أضف للسلة</button>
-        </div>
-      `).join('');
-      navigateTo('category');
-    }
-
-    function searchProducts() {
-      const q = document.getElementById('searchInput').value.toLowerCase();
-      const fp = document.getElementById('featuredProducts');
-      const filtered = products.filter(p => p.name.toLowerCase().includes(q));
-      fp.innerHTML = filtered.map(p => `
-        <div class="product-card">
-          <div class="name">${p.name}</div>
-          <div class="price">${formatPrice(p.price)}</div>
-          <button class="add-btn" onclick='addToCart(${JSON.stringify({id:p.id,name:p.name,price:p.price,image:p.image||""})})'>أضف</button>
-        </div>
-      `).join('');
-    }
-
-    // ====== السلة ======
-    function addToCart(p) {
-      const ex = cart.find(i => i.id === p.id);
-      if (ex) ex.qty++; else cart.push({ ...p, qty: 1 });
-      saveCart(); toast('تمت الإضافة', 'success');
-    }
-
-    function saveCart() {
-      localStorage.setItem('direct_cart', JSON.stringify(cart));
-      const count = cart.reduce((s, i) => s + i.qty, 0);
-      const badge = document.getElementById('cartBadge');
-      badge.textContent = count;
-      badge.classList.toggle('hidden', count === 0);
-    }
-
-    function renderCart() {
-      const container = document.getElementById('cartItems');
-      const empty = document.getElementById('cartEmpty');
-      const summary = document.getElementById('cartSummary');
-      if (!cart.length) { container.innerHTML = ''; empty.classList.remove('hidden'); summary.classList.add('hidden'); return; }
-      empty.classList.add('hidden'); summary.classList.remove('hidden');
-      let sub = 0;
-      container.innerHTML = cart.map(i => {
-        sub += i.price * i.qty;
-        return `
-          <div class="card-item">
-            <div class="card-item-info">
-              <h4>${i.name}</h4>
-              <div class="price">${formatPrice(i.price)}</div>
-            </div>
-            <div class="qty-controls">
-              <button onclick="changeQty('${i.id}', -1)">-</button>
-              <span>${i.qty}</span>
-              <button onclick="changeQty('${i.id}', 1)">+</button>
-            </div>
-          </div>`;
-      }).join('');
-      document.getElementById('subtotal').textContent = formatPrice(sub);
-      document.getElementById('total').textContent = formatPrice(sub);
-    }
-
-    function changeQty(id, d) {
-      const item = cart.find(i => i.id === id);
-      if (!item) return;
-      item.qty += d;
-      if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
-      saveCart(); renderCart();
-    }
-
-    // ====== الطلبات ======
-    async function placeOrder() {
-      if (!cart.length) return toast('السلة فارغة', 'error');
-      if (!userData || !userData.address) return toast('أضف عنوانك أولاً', 'error');
+    // تسجيل الدخول
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
       try {
-        const orderRef = window.FB.push(window.FB.ref(window.firebaseDb, 'orders'));
-        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-        await window.FB.set(orderRef, {
-          userId: currentUser.uid, userName: userData.name, userPhone: userData.phone,
-          address: userData.address, items: cart, total, status: 'pending', createdAt: Date.now()
-        });
-        cart = []; saveCart(); toast('تم إرسال الطلب', 'success');
-        navigateTo('orders');
-      } catch (e) { toast('خطأ في الطلب', 'error'); }
-    }
-
-    async function loadUserOrders() {
-      const snap = await window.FB.get(window.FB.ref(window.firebaseDb, 'orders'));
-      const list = document.getElementById('ordersList');
-      const empty = document.getElementById('ordersEmpty');
-      let orders = [];
-      if (snap.exists()) {
-        snap.forEach(o => {
-          if (o.val().userId === currentUser.uid) orders.push({ id: o.key, ...o.val() });
-        });
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        showError('loginError', 'بيانات الدخول غير صحيحة');
       }
-      orders.sort((a, b) => b.createdAt - a.createdAt);
-      if (!orders.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
-      empty.classList.add('hidden');
-      list.innerHTML = orders.map(o => `
-        <div class="card-item" style="flex-direction:column;align-items:flex-start;">
-          <div style="display:flex;justify-content:space-between;width:100%;margin-bottom:8px;">
-            <strong>#${o.id.slice(-5)}</strong>
-            <span style="color:${o.status === 'pending' ? '#f59e0b' : '#10b981'};font-weight:700;">${statusText(o.status)}</span>
-          </div>
-          <div style="font-size:0.85rem;color:var(--text-light);margin-bottom:8px;">${o.items.map(i => i.name).join(' • ')}</div>
-          <div style="font-weight:800;color:var(--accent);">${formatPrice(o.total)}</div>
-        </div>
-      `).join('');
-    }
+    });
 
-    function submitCustomRequest() {
-      const text = document.getElementById('customRequestText').value.trim();
-      if (!text) return toast('اكتب طلبك', 'error');
-      window.FB.push(window.FB.ref(window.firebaseDb, 'customRequests')).then(ref => {
-        window.FB.set(ref, { userId: currentUser.uid, userName: userData.name, text, status: 'pending', createdAt: Date.now() });
-        document.getElementById('customRequestText').value = '';
-        toast('تم الإرسال', 'success');
-      });
-    }
+    // إنشاء حساب
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('regName').value;
+      const phone = document.getElementById('regPhone').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
 
-    // ====== الملف الشخصي ======
-    function renderProfile() {
-      document.getElementById('profileAvatar').textContent = userData.name[0];
-      document.getElementById('profileName').textContent = userData.name;
-      document.getElementById('profilePhone').textContent = userData.phone;
-      document.getElementById('profileAddress').value = userData.address || '';
-    }
-    function updateProfile() {
-      const addr = document.getElementById('profileAddress').value.trim();
-      window.FB.update(window.FB.ref(window.firebaseDb, 'users/' + currentUser.uid), { address: addr }).then(() => {
-        userData.address = addr; toast('تم الحفظ', 'success');
-      });
-    }
-
-    // ====== الإشعارات ======
-    function renderNotifications() {
-      window.FB.get(window.FB.ref(window.firebaseDb, 'notifications')).then(snap => {
-        const list = document.getElementById('notifList');
-        let arr = [];
-        if (snap.exists()) snap.forEach(n => { if (n.val().userId === currentUser.uid) arr.push(n.val()); });
-        list.innerHTML = arr.map(n => `<div class="card-item"><div class="card-item-info"><h4>${n.title}</h4><p>${n.body}</p></div></div>`).join('') || '<div class="empty-state">لا يوجد إشعارات</div>';
-      });
-    }
-
-    // ====== الأدمن ======
-    function showAdminSection(sec) {
-      document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-      document.getElementById('admin-' + sec).classList.add('active');
-      if (sec === 'stats') loadStats();
-      if (sec === 'orders') loadAdminOrders();
-      if (sec === 'products') loadAdminProducts();
-      if (sec === 'custom') loadAdminCustom();
-    }
-
-    async function loadStats() {
-      const snap = await window.FB.get(window.FB.ref(window.firebaseDb, 'orders'));
-      let total = 0, pending = 0;
-      if (snap.exists()) snap.forEach(o => { total += o.val().total || 0; if (o.val().status === 'pending') pending++; });
-      document.getElementById('statsGrid').innerHTML = `
-        <div class="stat-card"><div class="val">${formatPrice(total)}</div><div class="lbl">المبيعات</div></div>
-        <div class="stat-card"><div class="val">${pending}</div><div class="lbl">قيد الانتظار</div></div>
-      `;
-    }
-
-    async function loadAdminOrders() {
-      const snap = await window.FB.get(window.FB.ref(window.firebaseDb, 'orders'));
-      const list = document.getElementById('adminOrdersList');
-      let orders = [];
-      if (snap.exists()) snap.forEach(o => orders.push({ id: o.key, ...o.val() }));
-      orders.sort((a, b) => b.createdAt - a.createdAt);
-      list.innerHTML = orders.map(o => `
-        <div class="card-item" style="flex-direction:column;align-items:flex-start;">
-          <div style="display:flex;justify-content:space-between;width:100%;margin-bottom:8px;">
-            <strong>${o.userName}</strong>
-            <select onchange="changeOrderStatus('${o.id}', this.value)" style="padding:4px;border-radius:4px;">
-              <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>قيد الانتظار</option>
-              <option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>تم التسليم</option>
-            </select>
-          </div>
-          <div>${o.items.map(i => i.name).join(' • ')}</div>
-          <div style="font-weight:800;color:var(--accent);margin-top:8px;">${formatPrice(o.total)}</div>
-        </div>
-      `).join('');
-    }
-
-    function changeOrderStatus(id, status) {
-      window.FB.update(window.FB.ref(window.firebaseDb, 'orders/' + id), { status }).then(() => toast('تم التحديث', 'success'));
-    }
-
-    async function loadAdminProducts() {
-      const list = document.getElementById('adminProductsList');
-      list.innerHTML = products.map(p => `
-        <div class="card-item">
-          <div class="card-item-info"><h4>${p.name}</h4><div class="price">${formatPrice(p.price)}</div></div>
-          <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">حذف</button>
-        </div>
-      `).join('');
-    }
-
-    function deleteProduct(id) {
-      if (confirm('حذف المنتج؟')) {
-        window.FB.remove(window.FB.ref(window.firebaseDb, 'products/' + id)).then(() => {
-          products = products.filter(p => p.id !== id);
-          loadAdminProducts(); renderHome(); toast('تم الحذف', 'success');
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          name: name,
+          phone: phone,
+          email: email,
+          role: 'customer',
+          address: '',
+          village: 'داخل القرية',
+          createdAt: new Date()
         });
-      }
-    }
-
-    // نافذة المنتج
-    function openProductModal() {
-      const sel = document.getElementById('prodCategory');
-      sel.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-      document.getElementById('productModal').classList.add('active');
-    }
-    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-    
-    function saveProduct() {
-      const name = document.getElementById('prodName').value.trim();
-      const price = parseFloat(document.getElementById('prodPrice').value);
-      const categoryId = document.getElementById('prodCategory').value;
-      const image = document.getElementById('prodImage').value.trim();
-      if (!name || !price) return toast('أكمل البيانات', 'error');
-      
-      const newRef = window.FB.push(window.FB.ref(window.firebaseDb, 'products'));
-      window.FB.set(newRef, { name, price, categoryId, image }).then(() => {
-        closeModal('productModal');
-        loadProducts();
-        toast('تمت الإضافة', 'success');
-      });
-    }
-
-    // ====== بدء التشغيل ======
-    function initApp() {
-      saveCart(); // تحديث السلة
-      
-      window.FB.onAuthStateChanged(window.firebaseAuth, async (user) => {
-        document.getElementById('splash').classList.add('hide');
-        if (user) {
-          currentUser = user;
-          await loadUserData(user.uid);
-          await loadCategories();
-          await loadProducts();
-          document.getElementById('loginScreen').classList.remove('active');
-          document.getElementById('registerScreen').classList.remove('active');
-          document.getElementById('app').classList.add('active');
+      } catch (err) {
+        if(err.code === 'auth/email-already-in-use') {
+          showError('registerError', 'هذا البريد مسجل بالفعل');
         } else {
-          currentUser = null;
-          document.getElementById('app').classList.remove('active');
-          showScreen('loginScreen');
+          showError('registerError', 'حدث خطأ: ' + err.message);
         }
-      });
-    }
+      }
+    });
 
-    // في حال لم يتم تحميل Firebase بسبب الشبكة
-    setTimeout(() => {
-      document.getElementById('splash').classList.add('hide');
-      if (!currentUser) showScreen('loginScreen');
-    }, 3000);
+    // تسجيل الخروج
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await signOut(auth);
+    });
 
-    // ربط الدالة مع سكربت Firebase
-    window.initApp = initApp;
-    if (window.firebaseReady) initApp();
   </script>
 </body>
-  </html>
+</html>
