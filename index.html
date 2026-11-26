@@ -1,88 +1,88 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0a2e6e" />
-  <title>دايركت | DIRECT</title>
+< html  lang = "ar"  dir = "rtl" >
+<head>​​
+  < meta  charset = "UTF-8"  />
+  < meta  name = "viewport"  content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"  />
+  < meta  name = "theme-color"  content = "#0a2e6e"  />
+  < عنوان > ديركت | مباشر </ العنوان >
   
-  <!-- مكتبات التصميم والخطوط -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <!-- مكاتب التصميم والخطوط -->
+  < script  src = " https://cdn.tailwindcss.com " > </script>
+  < link  href = "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap "  rel = " stylesheet" >
 
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: { blue: '#0a2e6e', lightBlue: '#1d4ed8', orange: '#f7931e', bg: '#f8fafc' }
-          },
-          fontFamily: { sans: ['Tajawal', 'sans-serif'] }
-        }
-      }
-    }
-  </script>
+  < نص برمجي >
+    tailwind.config = {tailwind.config = {
+      السمة: {theme: {
+        يمتد: {extend: {
+          الألوان: {colors: {
+            العلامة التجارية: { أزرق: '#0a2e6e'، أزرق فاتح: '#1d4ed8'، برتقالي: '#f7931e'، خلفية: '#f8fafc' }brand: { blue: '#0a2e6e', lightBlue: '#1d4ed8', orange: '#f7931e', bg: '#f8fafc' }
+          },},
+          FontFamily: { sans: ['Tajawal', 'sans-serif'] }fontFamily: { sans: ['Tajawal', 'sans-serif'] }
+        }}
+      }}
+    }}
+  </script>​​
 
-  <style>
-    body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
-    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #0a2e6e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .hidden { display: none !important; }
-  </style>
-</head>
-<body>
+  < style >
+    body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #0a2e6e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }loader { border: 4px solid #f3f3f3; border-top: 4px solid #0a2e6e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .hidden { display: none !important; }hidden { display: none !important; }
+  </ style >
+</ head >
+< نص الجسم >
 
-  <!-- شاشة التحميل -->
-  <div id="loadingScreen" class="fixed inset-0 bg-brand-blue flex flex-col items-center justify-center z-50">
-    <img src="logo.png" alt="Direct" class="w-32 mb-4 rounded-2xl bg-white p-2" onerror="this.style.display='none'">
-    <div class="loader"></div>
-  </div>
+  <!--شاشة التحميل -->
+  < div  id = "loadingScreen"  class = "fixed inset-0 bg-brand-blue flex flex-col items-center justify-center z-50" >
+    < img  src = "logo.png"  alt = "Direct"  class = "w-32 mb-4 rounded-2xl bg-white p-2"  onerror = "this.style.display='none'" >
+    < div  class = " loader " > </div>
+  </ div >
 
-  <!-- شاشة تسجيل الدخول -->
-  <div id="loginScreen" class="hidden min-h-screen items-center justify-center bg-brand-blue p-4">
-    <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-8">
-      <div class="text-center mb-8">
-        <img src="logo.png" alt="Direct Logo" class="w-24 mx-auto mb-4 rounded-2xl" onerror="this.src='https://via.placeholder.com/100?text=Logo'">
-        <h1 class="text-2xl font-bold text-brand-blue">مرحباً بك في دايركت</h1>
-        <p class="text-gray-500 mt-1">طلبك يوصل مباشرة</p>
-      </div>
-      <div id="loginError" class="hidden bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center"></div>
-      <form id="loginForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-bold mb-1">البريد الإلكتروني</label>
-          <input type="email" id="loginEmail" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="admin@direct.com">
-        </div>
-        <div>
-          <label class="block text-sm font-bold mb-1">كلمة المرور</label>
-          <input type="password" id="loginPassword" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="••••••••">
-        </div>
-        <button type="submit" class="w-full bg-brand-blue text-white font-bold py-3 rounded-xl hover:bg-brand-lightBlue transition flex items-center justify-center gap-2">
-          تسجيل الدخول
-        </button>
-      </form>
-      <div class="text-center mt-6 text-sm text-gray-600">
-        ليس لديك حساب؟ <a href="#" onclick="toggleScreens('register')" class="text-brand-blue font-bold hover:underline">إنشاء حساب جديد</a>
-      </div>
-    </div>
-  </div>
+  <!--شاشة تسجيل الدخول -->
+  < div  id = "loginScreen"  class = "hidden min-h-screen items-center justify-center bg-brand-blue p-4" >
+    < div  class = "bg-white rounded-3xl shadow-xl w-full max-w-md p-8" >
+      < div  class = "text-center mb-8" >
+        < img  src = "logo.png"  alt = "شعار مباشر"  class = "w-24 mx-auto mb-4 rounded-2xl"  onerror = "this.src='https://via.placeholder.com/100?text=Logo'" >
+        < h1  class = "text-2xl Font-bold text-brand-blue" > مرحبًا بك في دايركت </ h1 >
+        < p  class = "text-gray-500 mt-1" > استفسار يوصل مباشرة </ p >
+      </ div >
+      < div  id = "loginError"  class = "hidden bg - red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center" > </div>
+      < form  id = "loginForm"  class = "space-y-4" >
+        < div >
+          < label  class = "block text-sm Font-bold mb-1" > البريد الإلكتروني </ label >
+          < input  type = "email"  id = "loginEmail"  required  dir = "ltr"  class = "w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue"  placeholder = "admin@direct.com" >
+        </ div >
+        < div >
+          < label  class = "block text-sm Font-bold mb-1" > كلمة المرور </ label >
+          < input  type = "password"  id = "loginPassword"  required  dir = "ltr"  class = "w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue"  placeholder = "••••••••" >
+        </ div >
+        < button  type = "submit"  class = "w-full bg-brand-blue text-white font-bold py-3 rounded-xl hover:bg-brand-lightBlue transition flex items-center justify-center gap-2" >
+          استخدام
+        </button>​​
+      </ form >
+      < div  class = "text-center mt-6 text-sm text-gray-600 ">
+        ليس لديك حساب؟ <a href="#" onclick="toggleScreens('register')" class="text-brand-blue Font-bold hover:underline"> إنشاء حساب جديد</a><a href="#" onclick="toggleScreens('register')" class="text-brand-blue font-bold hover:underline">إنشاء حساب جديد</a>
+      </div></div>
+    </div></div>
+  </div></div>
 
-  <!-- شاشة إنشاء حساب -->
-  <div id="registerScreen" class="hidden min-h-screen items-center justify-center bg-brand-blue p-4">
-    <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-8">
-      <div class="text-center mb-6">
-        <img src="logo.png" alt="Direct Logo" class="w-20 mx-auto mb-3 rounded-xl" onerror="this.src='https://via.placeholder.com/100?text=Logo'">
-        <h1 class="text-2xl font-bold text-brand-blue">إنشاء حساب</h1>
-      </div>
-      <div id="registerError" class="hidden bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center"></div>
-      <form id="registerForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-bold mb-1">الاسم بالكامل</label>
-          <input type="text" id="regName" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="اسمك الكريم">
-        </div>
-        <div>
-          <label class="block text-sm font-bold mb-1">رقم الهاتف</label>
-          <input type="tel" id="regPhone" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="01xxxxxxxxx">
-        </div>
+  <!--شاشة إنشاء حساب --><!-- شاشة إنشاء حساب -->
+  <div id="registerScreen" class="hidden min-h-screen items-center justify-center bg-brand-blue p-4"><div id="registerScreen" class="hidden min-h-screen items-center justify-center bg-brand-blue p-4">
+    <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-8"><div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-8">
+      <div class="text-center mb-6"><div class="text-center mb-6">
+        <img src="logo.png" alt="شعار مباشر" class="w-20 mx-auto mb-3 rounded-xl" onerror="this.src='https://via.placeholder.com/100?text=Logo'"><img src="logo.png" alt="Direct Logo" class="w-20 mx-auto mb-3 rounded-xl" onerror="this.src='https://via.placeholder.com/100?text=Logo'">
+        <h1 class="text-2xl Font-bold text-brand-blue"> إنشاء الحساب</h1><h1 class="text-2xl font-bold text-brand-blue">إنشاء حساب</h1>
+      </div></div>
+      <div id="registerError" class="hidden bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center"></div><div id="registerError" class="hidden bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center"></div>
+      <form id="registerForm" class="space-y-4"><form id="registerForm" class="space-y-4">
+        <div><div>
+          <label class="block text-smfont-bold mb-1">الاسم بالكامل</label><label class="block text-sm font-bold mb-1">الاسم بالكامل</label>
+          <input type="text" id="regName" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="اسمك الكريم"><input type="text" id="regName" required class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="اسمك الكريم">
+        </div></div>
+        <div><div>
+          <label class="block text-smfont-bold mb-1">رقم الهاتف</label><label class="block text-sm font-bold mb-1">رقم الهاتف</label>
+          <input type="tel" id="regPhone" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="01xxxxxxxxx"><input type="tel" id="regPhone" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="01xxxxxxxxx">
+        </div></div>
         <div>
           <label class="block text-sm font-bold mb-1">البريد الإلكتروني</label>
           <input type="email" id="regEmail" required dir="ltr" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-blue" placeholder="email@example.com">
