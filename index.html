@@ -227,7 +227,6 @@
     .admin-list-item .info{flex:1;min-width:0;word-break:break-word;}
     .admin-list-item .actions{display:flex;gap:6px;flex-wrap:wrap;}
     .back-btn{background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;padding:4px 8px;}
-    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   </style>
 </head>
 <body>
@@ -523,7 +522,6 @@
     </div>
   </div>
 
-  <!-- Invoice preview container (hidden) -->
   <div id="invoiceContainer" style="position:fixed;left:-9999px;top:0;"></div>
 
   <!-- Firebase -->
@@ -531,14 +529,15 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
       from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
-      query, where, orderBy, onSnapshot, serverTimestamp }
-      from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    // استخدمنا Realtime Database هنا
+    import { getDatabase, ref, set, push, get, child, update, remove, onValue, query, orderByChild, equalTo }
+      from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAUn6EhDFqef6I81EhNTZTB-qZRQHl7a1Q",
       authDomain: "direct-1-c93b9.firebaseapp.com",
+      databaseURL: "https://direct-1-c93b9-default-rtdb.firebaseio.com", // تأكد من وجود هذا الرابط في إعدادات Firebase
       projectId: "direct-1-c93b9",
       storageBucket: "direct-1-c93b9.firebasestorage.app",
       messagingSenderId: "216801978683",
@@ -549,14 +548,13 @@
     const app = initializeApp(firebaseConfig);
     try { getAnalytics(app); } catch(e) {}
     const auth = getAuth(app);
-    const db = getFirestore(app);
+    const db = getDatabase(app);
 
     window.firebaseAuth = auth;
     window.firebaseDb = db;
     window.firebaseModules = {
       createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
-      collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
-      query, where, orderBy, onSnapshot, serverTimestamp
+      ref, set, push, get, child, update, remove, onValue, query, orderByChild, equalTo
     };
     window.firebaseReady = true;
     if (window.onFirebaseReady) window.onFirebaseReady();
@@ -568,6 +566,7 @@
     const normPhone = (p) => (p || '').replace(/\D/g, '').replace(/^0+/, '');
     const isSuper = (phone) => normPhone(phone) === normPhone(SUPER_ADMIN_PHONE);
     const phoneToEmail = (phone) => normPhone(phone) + '@direct.local';
+    const dateNow = () => Date.now();
 
     let currentUser = null, userData = null;
     let cart = JSON.parse(localStorage.getItem('direct_cart') || '[]');
@@ -643,7 +642,7 @@
       navigateTo(prev, false);
     }
 
-    // ===== Auth (Name + Phone + Password) =====
+    // ===== Auth =====
     function validatePhone(phone){
       const p = (phone||'').replace(/\D/g,'');
       return /^01[0-9]{9}$/.test(p);
@@ -661,14 +660,16 @@
 
       try {
         const email = phoneToEmail(phone);
-        const cred = await window.firebaseModules.createUserWithEmailAndPassword(
-          window.firebaseAuth, email, password);
+        const { createUserWithEmailAndPassword, ref, set, get } = window.firebaseModules;
+        const cred = await createUserWithEmailAndPassword(window.firebaseAuth, email, password);
         const uid = cred.user.uid;
         const role = isSuper(phone) ? 'admin' : 'customer';
-        await window.firebaseModules.setDoc(
-          window.firebaseModules.doc(window.firebaseDb,'users',uid),
-          { name, phone, email, address, role, createdAt: window.firebaseModules.serverTimestamp() }
-        );
+        
+        // حفظ بيانات المستخدم في Realtime Database
+        await set(ref(window.firebaseDb, 'users/' + uid), {
+          name, phone, email, address, role, createdAt: dateNow()
+        });
+        
         toast('تم إنشاء الحساب بنجاح','success');
       } catch(err){
         console.error(err);
@@ -685,13 +686,12 @@
       if (!validatePhone(phone)) return toast('رقم الهاتف غير صالح','error');
 
       try {
-        await window.firebaseModules.signInWithEmailAndPassword(
-          window.firebaseAuth, phoneToEmail(phone), password);
-        // Verify name matches
+        const { signInWithEmailAndPassword, ref, get } = window.firebaseModules;
+        await signInWithEmailAndPassword(window.firebaseAuth, phoneToEmail(phone), password);
+        // Verify name
         if (currentUser) {
-          const snap = await window.firebaseModules.getDoc(
-            window.firebaseModules.doc(window.firebaseDb,'users',currentUser.uid));
-          if (snap.exists() && snap.data().name !== name) {
+          const snap = await get(ref(window.firebaseDb, 'users/' + currentUser.uid));
+          if (snap.exists() && snap.val().name !== name) {
             await window.firebaseModules.signOut(window.firebaseAuth);
             return toast('الاسم لا يطابق صاحب الرقم','error');
           }
@@ -707,16 +707,14 @@
       cart = []; saveCart();
     }
 
-    // ===== User data =====
     async function loadUserData(uid){
-      const snap = await window.firebaseModules.getDoc(
-        window.firebaseModules.doc(window.firebaseDb,'users',uid));
+      const { ref, get } = window.firebaseModules;
+      const snap = await get(ref(window.firebaseDb, 'users/' + uid));
       if (!snap.exists()) return;
-      userData = { id: uid, ...snap.data() };
+      userData = { id: uid, ...snap.val() };
       if (isSuper(userData.phone) && userData.role !== 'admin') {
         userData.role = 'admin';
-        await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'users',uid), { role:'admin' });
+        await window.firebaseModules.update(ref(window.firebaseDb, 'users/' + uid), { role:'admin' });
       }
     }
 
@@ -772,28 +770,28 @@
       document.getElementById('total').textContent = formatPrice(subtotal);
     }
 
-    // ===== Custom requests (خانة منفصلة) =====
+    // ===== Custom requests =====
     async function submitCustomRequest(){
       if (!userData) return toast('سجّل الدخول أولاً','error');
       const text = document.getElementById('customRequestText').value.trim();
       if (!text) return toast('اكتب طلبك','error');
       try {
-        await window.firebaseModules.addDoc(
-          window.firebaseModules.collection(window.firebaseDb,'customRequests'),
-          {
-            userId: currentUser.uid, userName: userData.name, userPhone: userData.phone,
-            text, status:'pending', createdAt: window.firebaseModules.serverTimestamp()
-          });
-        await window.firebaseModules.addDoc(
-          window.firebaseModules.collection(window.firebaseDb,'notifications'),
-          {
-            userId: currentUser.uid, title:'تم استلام طلبك المخصص',
-            body:'سيتواصل معك فريق دايركت قريباً', read:false,
-            createdAt: window.firebaseModules.serverTimestamp()
-          });
+        const { ref, push, set } = window.firebaseModules;
+        const newRef = push(ref(window.firebaseDb, 'customRequests'));
+        await set(newRef, {
+          userId: currentUser.uid, userName: userData.name, userPhone: userData.phone,
+          text, status:'pending', createdAt: dateNow()
+        });
+        await addNotification(currentUser.uid, 'تم استلام طلبك المخصص', 'سيتواصل معك فريق دايركت قريباً');
         document.getElementById('customRequestText').value = '';
         toast('تم إرسال الطلب المخصص ✅','success');
       } catch(e){ console.error(e); toast('خطأ في الإرسال','error'); }
+    }
+
+    async function addNotification(userId, title, body){
+      const { ref, push, set } = window.firebaseModules;
+      const nRef = push(ref(window.firebaseDb, 'notifications'));
+      await set(nRef, { userId, title, body, read:false, createdAt: dateNow() });
     }
 
     // ===== Orders =====
@@ -804,21 +802,16 @@
       const phone = userData.phone || '';
       if (!address || !phone) return toast('حدّث العنوان والهاتف من حسابي','error');
       try {
+        const { ref, push, set } = window.firebaseModules;
         const items = cart.map(i => ({ id:i.id, name:i.name, price:i.price, qty:i.qty }));
         const total = cart.reduce((s,i)=> s + i.price * i.qty, 0);
-        await window.firebaseModules.addDoc(
-          window.firebaseModules.collection(window.firebaseDb,'orders'),
-          {
-            userId: currentUser.uid, userName: userData.name, userPhone: phone,
-            address, items, total, status:'pending', deliveryMan:null,
-            createdAt: window.firebaseModules.serverTimestamp(),
-            updatedAt: window.firebaseModules.serverTimestamp()
-          });
-        await window.firebaseModules.addDoc(
-          window.firebaseModules.collection(window.firebaseDb,'notifications'),
-          { userId: currentUser.uid, title:'تم استلام طلبك',
-            body:'طلبك قيد المراجعة وسيتم تجهيزه قريباً',
-            read:false, createdAt: window.firebaseModules.serverTimestamp() });
+        const orderRef = push(ref(window.firebaseDb, 'orders'));
+        await set(orderRef, {
+          userId: currentUser.uid, userName: userData.name, userPhone: phone,
+          address, items, total, status:'pending', deliveryMan:null,
+          createdAt: dateNow(), updatedAt: dateNow()
+        });
+        await addNotification(currentUser.uid, 'تم استلام طلبك', 'طلبك قيد المراجعة وسيتم تجهيزه قريباً');
         cart = []; saveCart();
         toast('تم إرسال الطلب ✅','success');
         navigateTo('orders');
@@ -830,13 +823,14 @@
       const empty = document.getElementById('ordersEmpty');
       list.innerHTML = '<p class="text-center" style="color:var(--text-light)">جاري التحميل...</p>';
       try {
-        const q = window.firebaseModules.query(
-          window.firebaseModules.collection(window.firebaseDb,'orders'),
-          window.firebaseModules.where('userId','==',currentUser.uid));
-        const snap = await window.firebaseModules.getDocs(q);
-        const orders = [];
-        snap.forEach(d => orders.push({ id:d.id, ...d.data() }));
-        orders.sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'orders'));
+        let orders = [];
+        snap.forEach(child => {
+          const o = child.val();
+          if (o.userId === currentUser.uid) orders.push({ id: child.key, ...o });
+        });
+        orders.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
         if (!orders.length){
           list.innerHTML = ''; empty.classList.remove('hidden'); return;
         }
@@ -854,7 +848,7 @@
             <div class="flex-between">
               <span style="font-weight:700;color:var(--accent)">${formatPrice(o.total)}</span>
               <span style="font-size:.8rem;color:var(--text-light)">
-                ${o.createdAt ? new Date(o.createdAt.seconds*1000).toLocaleDateString('ar-EG') : ''}
+                ${o.createdAt ? new Date(o.createdAt).toLocaleDateString('ar-EG') : ''}
               </span>
             </div>
           </div>`).join('');
@@ -864,15 +858,15 @@
     // ===== Home & Products =====
     async function loadCategories(){
       try {
-        const snap = await window.firebaseModules.getDocs(
-          window.firebaseModules.collection(window.firebaseDb,'categories'));
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'categories'));
         categories = [];
-        snap.forEach(d => categories.push({ id:d.id, ...d.data() }));
+        if (snap.exists()) {
+          snap.forEach(child => categories.push({ id: child.key, ...child.val() }));
+        }
         if (!categories.length){
           for (const c of DEFAULT_CATEGORIES){
-            await window.firebaseModules.setDoc(
-              window.firebaseModules.doc(window.firebaseDb,'categories',c.id),
-              { name:c.name, icon:c.icon, order:0 });
+            await window.firebaseModules.set(ref(window.firebaseDb, 'categories/' + c.id), { name:c.name, icon:c.icon, order:0 });
             categories.push({ id:c.id, name:c.name, icon:c.icon });
           }
         }
@@ -880,10 +874,12 @@
     }
     async function loadProducts(){
       try {
-        const snap = await window.firebaseModules.getDocs(
-          window.firebaseModules.collection(window.firebaseDb,'products'));
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'products'));
         products = [];
-        snap.forEach(d => products.push({ id:d.id, ...d.data() }));
+        if (snap.exists()) {
+          snap.forEach(child => products.push({ id: child.key, ...child.val() }));
+        }
       } catch(e){ products = []; }
     }
     function renderHome(){
@@ -933,8 +929,7 @@
     async function updateProfile(){
       const address = document.getElementById('profileAddress').value.trim();
       try {
-        await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'users',currentUser.uid), { address });
+        await window.firebaseModules.update(ref(window.firebaseDb, 'users/' + currentUser.uid), { address });
         userData.address = address;
         toast('تم حفظ التعديلات','success');
       } catch(e){ toast('حدث خطأ','error'); }
@@ -944,13 +939,14 @@
     function listenNotifications(){
       if (unsubNotifications) unsubNotifications();
       if (!currentUser) return;
-      const q = window.firebaseModules.query(
-        window.firebaseModules.collection(window.firebaseDb,'notifications'),
-        window.firebaseModules.where('userId','==',currentUser.uid));
-      unsubNotifications = window.firebaseModules.onSnapshot(q, (snap) => {
+      const { ref, onValue } = window.firebaseModules;
+      unsubNotifications = onValue(ref(window.firebaseDb, 'notifications'), (snap) => {
         notifications = [];
-        snap.forEach(d => notifications.push({ id:d.id, ...d.data() }));
-        notifications.sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+        snap.forEach(child => {
+          const n = child.val();
+          if (n.userId === currentUser.uid) notifications.push({ id: child.key, ...n });
+        });
+        notifications.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
         const unread = notifications.filter(n => !n.read).length;
         document.getElementById('notifDot').classList.toggle('hidden', unread === 0);
         if (currentPage === 'notifications') renderNotifications();
@@ -968,18 +964,16 @@
           <div style="font-weight:700;color:var(--primary);margin-bottom:4px;">${n.title}</div>
           <div style="font-size:.9rem;">${n.body}</div>
           <div style="font-size:.75rem;color:var(--text-light);margin-top:6px;">
-            ${n.createdAt ? new Date(n.createdAt.seconds*1000).toLocaleString('ar-EG') : ''}
+            ${n.createdAt ? new Date(n.createdAt).toLocaleString('ar-EG') : ''}
           </div>
         </div>`).join('');
-      // Mark all read after opening
       setTimeout(() => {
         notifications.forEach(n => { if (!n.read) markNotifRead(n.id, true); });
       }, 500);
     }
     async function markNotifRead(id, silent=false){
       try {
-        await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'notifications',id), { read:true });
+        await window.firebaseModules.update(ref(window.firebaseDb, 'notifications/' + id), { read:true });
         if (!silent) renderNotifications();
       } catch(e){}
     }
@@ -1009,19 +1003,21 @@
     async function loadStats(){
       const grid = document.getElementById('statsGrid');
       try {
-        const snap = await window.firebaseModules.getDocs(
-          window.firebaseModules.collection(window.firebaseDb,'orders'));
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'orders'));
         let totalOrders = 0, totalSales = 0, pending = 0, delivered = 0;
         const counter = {};
-        snap.forEach(d => {
-          const o = d.data(); totalOrders++;
-          totalSales += o.total || 0;
-          if (o.status === 'pending') pending++;
-          if (o.status === 'delivered') delivered++;
-          (o.items || []).forEach(i => {
-            counter[i.name] = (counter[i.name] || 0) + (i.qty || 0);
+        if (snap.exists()) {
+          snap.forEach(child => {
+            const o = child.val(); totalOrders++;
+            totalSales += o.total || 0;
+            if (o.status === 'pending') pending++;
+            if (o.status === 'delivered') delivered++;
+            (o.items || []).forEach(i => {
+              counter[i.name] = (counter[i.name] || 0) + (i.qty || 0);
+            });
           });
-        });
+        }
         const topProduct = Object.entries(counter).sort((a,b)=> b[1]-a[1])[0];
         grid.innerHTML = `
           <div class="stat-card"><div class="value">${totalOrders}</div><div class="label">إجمالي الطلبات</div></div>
@@ -1039,19 +1035,18 @@
       const list = document.getElementById('adminOrdersList');
       list.innerHTML = 'جاري التحميل...';
       try {
-        const snap = await window.firebaseModules.getDocs(
-          window.firebaseModules.collection(window.firebaseDb,'orders'));
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'orders'));
         const orders = [];
-        snap.forEach(d => orders.push({ id:d.id, ...d.data() }));
-        orders.sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+        if (snap.exists()) snap.forEach(child => orders.push({ id: child.key, ...child.val() }));
+        orders.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
         if (!orders.length){
           list.innerHTML = '<div class="empty-state"><p>لا توجد طلبات</p></div>'; return;
         }
-        // Load delivery men for selector
-        const dSnap = await window.firebaseModules.getDocs(
-          window.firebaseModules.collection(window.firebaseDb,'deliveryMen'));
+        
+        const dSnap = await get(ref(window.firebaseDb, 'deliveryMen'));
         deliveryMen = [];
-        dSnap.forEach(d => deliveryMen.push({ id:d.id, ...d.data() }));
+        if (dSnap.exists()) dSnap.forEach(child => deliveryMen.push({ id: child.key, ...child.val() }));
 
         list.innerHTML = orders.map(o => `
           <div class="order-card">
@@ -1089,19 +1084,12 @@
 
     async function updateOrderStatus(orderId, status){
       try {
-        await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'orders',orderId),
-          { status, updatedAt: window.firebaseModules.serverTimestamp() });
-        // Notify customer
-        const snap = await window.firebaseModules.getDoc(
-          window.firebaseModules.doc(window.firebaseDb,'orders',orderId));
+        const { ref, update, get } = window.firebaseModules;
+        await update(ref(window.firebaseDb, 'orders/' + orderId), { status, updatedAt: dateNow() });
+        const snap = await get(ref(window.firebaseDb, 'orders/' + orderId));
         if (snap.exists()){
-          const o = snap.data();
-          await window.firebaseModules.addDoc(
-            window.firebaseModules.collection(window.firebaseDb,'notifications'),
-            { userId:o.userId, title:'تحديث حالة طلبك',
-              body:`طلبك #${orderId.slice(-6)} أصبح: ${statusText(status)}`,
-              read:false, createdAt: window.firebaseModules.serverTimestamp() });
+          const o = snap.val();
+          await addNotification(o.userId, 'تحديث حالة طلبك', `طلبك #${orderId.slice(-6)} أصبح: ${statusText(status)}`);
         }
         toast('تم تحديث حالة الطلب','success');
       } catch(e){ toast('حدث خطأ','error'); }
@@ -1112,21 +1100,19 @@
       const d = deliveryMen.find(x => x.id === deliveryId);
       if (!d) return;
       try {
-        await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'orders',orderId),
-          { deliveryMan:{ id:d.id, name:d.name, phone:d.phone },
-            updatedAt: window.firebaseModules.serverTimestamp() });
+        const { ref, update } = window.firebaseModules;
+        await update(ref(window.firebaseDb, 'orders/' + orderId), { deliveryMan:{ id:d.id, name:d.name, phone:d.phone }, updatedAt: dateNow() });
         toast('تم تعيين المندوب','success');
         loadAdminOrders();
       } catch(e){ toast('خطأ','error'); }
     }
 
-    // ===== Invoice PDF & Image =====
+    // ===== Invoice =====
     async function buildInvoiceHTML(orderId){
-      const snap = await window.firebaseModules.getDoc(
-        window.firebaseModules.doc(window.firebaseDb,'orders',orderId));
+      const { ref, get } = window.firebaseModules;
+      const snap = await get(ref(window.firebaseDb, 'orders/' + orderId));
       if (!snap.exists()) return null;
-      const o = snap.data();
+      const o = snap.val();
       return `<div style="font-family:Arial,sans-serif;padding:30px;max-width:600px;margin:0 auto;background:#fff;color:#1a1a2e;">
         <div style="text-align:center;border-bottom:3px solid #0a2e6e;padding-bottom:20px;margin-bottom:20px;">
           <img src="logo.png" style="width:100px;"/>
@@ -1137,7 +1123,7 @@
         <p><strong>العميل:</strong> ${o.userName || '-'}</p>
         <p><strong>الهاتف:</strong> ${o.userPhone || '-'}</p>
         <p><strong>العنوان:</strong> ${o.address || '-'}</p>
-        <p><strong>التاريخ:</strong> ${o.createdAt ? new Date(o.createdAt.seconds*1000).toLocaleString('ar-EG') : '-'}</p>
+        <p><strong>التاريخ:</strong> ${o.createdAt ? new Date(o.createdAt).toLocaleString('ar-EG') : '-'}</p>
         <table style="width:100%;border-collapse:collapse;margin:20px 0;">
           <tr style="background:#0a2e6e;color:#fff;">
             <th style="border:1px solid #ddd;padding:10px;text-align:right;">المنتج</th>
@@ -1234,10 +1220,13 @@
       };
       if (!data.name) return toast('أدخل اسم المنتج','error');
       try {
-        if (id) await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'products',id), data);
-        else await window.firebaseModules.addDoc(
-          window.firebaseModules.collection(window.firebaseDb,'products'), data);
+        const { ref, set, update, push } = window.firebaseModules;
+        if (id) {
+          await update(ref(window.firebaseDb, 'products/' + id), data);
+        } else {
+          const newRef = push(ref(window.firebaseDb, 'products'));
+          await set(newRef, data);
+        }
         closeModal('productModal');
         await loadProducts(); renderAdminProducts(); renderHome();
         toast('تم الحفظ','success');
@@ -1246,8 +1235,8 @@
     async function deleteProduct(id){
       if (!confirm('حذف المنتج؟')) return;
       try {
-        await window.firebaseModules.deleteDoc(
-          window.firebaseModules.doc(window.firebaseDb,'products',id));
+        const { ref, remove } = window.firebaseModules;
+        await remove(ref(window.firebaseDb, 'products/' + id));
         await loadProducts(); renderAdminProducts(); renderHome();
         toast('تم الحذف','success');
       } catch(e){ toast('خطأ','error'); }
@@ -1284,10 +1273,13 @@
       };
       if (!data.name) return toast('أدخل اسم القسم','error');
       try {
-        if (id) await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'categories',id), data);
-        else await window.firebaseModules.addDoc(
-          window.firebaseModules.collection(window.firebaseDb,'categories'), data);
+        const { ref, set, update, push } = window.firebaseModules;
+        if (id) {
+          await update(ref(window.firebaseDb, 'categories/' + id), data);
+        } else {
+          const newRef = push(ref(window.firebaseDb, 'categories'));
+          await set(newRef, data);
+        }
         closeModal('categoryModal');
         await loadCategories(); renderAdminCategories(); renderHome();
         toast('تم الحفظ','success');
@@ -1296,23 +1288,23 @@
     async function deleteCategory(id){
       if (!confirm('حذف القسم؟')) return;
       try {
-        await window.firebaseModules.deleteDoc(
-          window.firebaseModules.doc(window.firebaseDb,'categories',id));
+        const { ref, remove } = window.firebaseModules;
+        await remove(ref(window.firebaseDb, 'categories/' + id));
         await loadCategories(); renderAdminCategories(); renderHome();
         toast('تم الحذف','success');
       } catch(e){ toast('خطأ','error'); }
     }
 
-    // ===== Admin: Custom Requests =====
+    // ===== Admin: Custom =====
     async function loadAdminCustom(){
       const list = document.getElementById('adminCustomList');
       list.innerHTML = 'جاري التحميل...';
       try {
-        const snap = await window.firebaseModules.getDocs(
-          window.firebaseModules.collection(window.firebaseDb,'customRequests'));
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'customRequests'));
         const arr = [];
-        snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
-        arr.sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+        if (snap.exists()) snap.forEach(child => arr.push({ id: child.key, ...child.val() }));
+        arr.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
         if (!arr.length){ list.innerHTML = '<div class="empty-state"><p>لا توجد طلبات مخصصة</p></div>'; return; }
         list.innerHTML = arr.map(r => `<div class="order-card">
           <div class="order-header">
@@ -1328,9 +1320,7 @@
     }
     async function markCustomDone(id){
       try {
-        await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'customRequests',id),
-          { status:'done' });
+        await window.firebaseModules.update(ref(window.firebaseDb, 'customRequests/' + id), { status:'done' });
         toast('تم','success'); loadAdminCustom();
       } catch(e){ toast('خطأ','error'); }
     }
@@ -1338,10 +1328,10 @@
     // ===== Admin: Delivery =====
     async function loadDeliveryMen(){
       try {
-        const snap = await window.firebaseModules.getDocs(
-          window.firebaseModules.collection(window.firebaseDb,'deliveryMen'));
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'deliveryMen'));
         deliveryMen = [];
-        snap.forEach(d => deliveryMen.push({ id:d.id, ...d.data() }));
+        if (snap.exists()) snap.forEach(child => deliveryMen.push({ id: child.key, ...child.val() }));
         const list = document.getElementById('adminDeliveryList');
         if (!deliveryMen.length){
           list.innerHTML = '<div class="empty-state"><p>لا يوجد مندوبين</p></div>'; return;
@@ -1365,17 +1355,16 @@
       const phone = document.getElementById('delPhone').value.trim();
       if (!name || !phone) return toast('أدخل الاسم والرقم','error');
       try {
-        await window.firebaseModules.addDoc(
-          window.firebaseModules.collection(window.firebaseDb,'deliveryMen'),
-          { name, phone });
+        const { ref, push, set } = window.firebaseModules;
+        const newRef = push(ref(window.firebaseDb, 'deliveryMen'));
+        await set(newRef, { name, phone });
         closeModal('deliveryModal'); loadDeliveryMen(); toast('تم الإضافة','success');
       } catch(e){ toast('خطأ','error'); }
     }
     async function deleteDeliveryMan(id){
       if (!confirm('حذف المندوب؟')) return;
       try {
-        await window.firebaseModules.deleteDoc(
-          window.firebaseModules.doc(window.firebaseDb,'deliveryMen',id));
+        await window.firebaseModules.remove(ref(window.firebaseDb, 'deliveryMen/' + id));
         loadDeliveryMen(); toast('تم الحذف','success');
       } catch(e){ toast('خطأ','error'); }
     }
@@ -1383,22 +1372,26 @@
     // ===== Admin: Admins =====
     async function loadAdmins(){
       try {
-        const q = window.firebaseModules.query(
-          window.firebaseModules.collection(window.firebaseDb,'users'),
-          window.firebaseModules.where('role','==','admin'));
-        const snap = await window.firebaseModules.getDocs(q);
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'users'));
         const list = document.getElementById('adminsList');
-        if (snap.empty){ list.innerHTML = '<p style="color:var(--text-light)">لا يوجد مشرفين</p>'; return; }
+        const admins = [];
+        if (snap.exists()) {
+          snap.forEach(child => {
+            const u = child.val();
+            if (u.role === 'admin') admins.push({ id: child.key, ...u });
+          });
+        }
+        if (!admins.length){ list.innerHTML = '<p style="color:var(--text-light)">لا يوجد مشرفين</p>'; return; }
         let html = '';
-        snap.forEach(d => {
-          const u = d.data();
+        admins.forEach(u => {
           html += `<div class="admin-list-item">
             <div class="info"><strong>${u.name}</strong><br>
               <span style="color:var(--text-light)">${u.phone}</span>
               ${isSuper(u.phone)?'<span class="profile-role" style="margin-right:6px;">سوبر</span>':''}
             </div>
             ${isSuper(u.phone)?'':`<div class="actions">
-              <button class="btn btn-sm btn-danger" onclick="removeAdmin('${d.id}')">إزالة</button>
+              <button class="btn btn-sm btn-danger" onclick="removeAdmin('${u.id}')">إزالة</button>
             </div>`}
           </div>`;
         });
@@ -1409,16 +1402,17 @@
       const phone = document.getElementById('newAdminPhone').value.trim();
       if (!phone) return toast('أدخل رقم الهاتف','error');
       try {
-        const snap = await window.firebaseModules.getDocs(
-          window.firebaseModules.collection(window.firebaseDb,'users'));
+        const { ref, get, update } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'users'));
         let target = null;
-        snap.forEach(d => {
-          const u = d.data();
-          if (normPhone(u.phone) === normPhone(phone)) target = { id:d.id, ...u };
-        });
+        if (snap.exists()) {
+          snap.forEach(child => {
+            const u = child.val();
+            if (normPhone(u.phone) === normPhone(phone)) target = { id: child.key, ...u };
+          });
+        }
         if (!target) return toast('لا يوجد مستخدم بهذا الرقم','error');
-        await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'users',target.id), { role:'admin' });
+        await update(ref(window.firebaseDb, 'users/' + target.id), { role:'admin' });
         toast('تم تعيين المشرف','success');
         document.getElementById('newAdminPhone').value = '';
         loadAdmins();
@@ -1427,8 +1421,7 @@
     async function removeAdmin(uid){
       if (!confirm('إزالة صلاحية المشرف؟')) return;
       try {
-        await window.firebaseModules.updateDoc(
-          window.firebaseModules.doc(window.firebaseDb,'users',uid), { role:'customer' });
+        await window.firebaseModules.update(ref(window.firebaseDb, 'users/' + uid), { role:'customer' });
         loadAdmins(); toast('تم','success');
       } catch(e){ toast('خطأ','error'); }
     }
@@ -1440,29 +1433,23 @@
       const body = document.getElementById('notifBody').value.trim();
       if (!title || !body) return toast('أدخل العنوان والنص','error');
       try {
+        const { ref, get } = window.firebaseModules;
+        const snap = await get(ref(window.firebaseDb, 'users'));
         if (phone){
-          // Send to one user
-          const snap = await window.firebaseModules.getDocs(
-            window.firebaseModules.collection(window.firebaseDb,'users'));
           let target = null;
-          snap.forEach(d => {
-            const u = d.data();
-            if (normPhone(u.phone) === normPhone(phone)) target = d.id;
-          });
+          if (snap.exists()) {
+            snap.forEach(child => {
+              const u = child.val();
+              if (normPhone(u.phone) === normPhone(phone)) target = child.key;
+            });
+          }
           if (!target) return toast('المستخدم غير موجود','error');
-          await window.firebaseModules.addDoc(
-            window.firebaseModules.collection(window.firebaseDb,'notifications'),
-            { userId:target, title, body, read:false,
-              createdAt: window.firebaseModules.serverTimestamp() });
+          await addNotification(target, title, body);
         } else {
-          // Send to all
-          const snap = await window.firebaseModules.getDocs(
-            window.firebaseModules.collection(window.firebaseDb,'users'));
-          for (const d of snap.docs){
-            await window.firebaseModules.addDoc(
-              window.firebaseModules.collection(window.firebaseDb,'notifications'),
-              { userId:d.id, title, body, read:false,
-                createdAt: window.firebaseModules.serverTimestamp() });
+          if (snap.exists()) {
+            for (const child of Object.keys(snap.val())) {
+              await addNotification(child, title, body);
+            }
           }
         }
         toast('تم الإرسال','success');
@@ -1509,4 +1496,4 @@
     }, 4000);
   </script>
 </body>
-        </html>
+          </html>
