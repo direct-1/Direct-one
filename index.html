@@ -1,1 +1,893 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a2e6e" />
+  <title>دايركت | DIRECT</title>
 
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              blue: '#0a2e6e',
+              lightBlue: '#1d4ed8',
+              orange: '#f7931e',
+              bg: '#f8fafc',
+              dark: '#061a3d'
+            }
+          },
+          fontFamily: { sans: ['Tajawal', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
+
+    /* شاشة التحميل */
+    .splash-grad { background: linear-gradient(160deg, #0a2e6e 0%, #1d4ed8 100%); }
+    .loader-ring {
+      width: 46px; height: 46px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: #f7931e;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* أنيميشن */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes pop { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .anim-fade { animation: fadeIn 0.35s ease both; }
+    .anim-slide { animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
+    .anim-pop { animation: pop 0.25s ease both; }
+
+    /* أزرار */
+    .btn-primary {
+      background: linear-gradient(135deg, #0a2e6e, #1d4ed8);
+      box-shadow: 0 8px 20px -8px rgba(29,78,216,0.6);
+      transition: all 0.2s;
+    }
+    .btn-primary:active { transform: scale(0.97); box-shadow: 0 4px 12px -6px rgba(29,78,216,0.6); }
+    .btn-primary:disabled { opacity: 0.6; }
+
+    .card-hover { transition: all 0.2s; }
+    .card-hover:active { transform: scale(0.97); }
+
+    /* حقول الإدخال */
+    .input-field {
+      width: 100%;
+      border: 2px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 13px 14px;
+      outline: none;
+      transition: all 0.2s;
+      font-size: 15px;
+      background: #fafbfc;
+    }
+    .input-field:focus { border-color: #1d4ed8; background: #fff; box-shadow: 0 0 0 4px rgba(29,78,216,0.08); }
+
+    /* شريط التنقل السفلي */
+    .nav-tab.active {
+      color: #0a2e6e;
+      background: rgba(29,78,216,0.1);
+    }
+
+    /* Hide/Show */
+    .hidden { display: none !important; }
+
+    /* شيت */
+    .sheet-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(2px);
+      z-index: 60;
+    }
+
+    /* سكرول أفقي */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      top: 20px; left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #0a2e6e;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+      z-index: 9999;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; align-items: center; gap: 8px;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.error { background: #dc2626; }
+    #toast.success { background: #16a34a; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== شاشة التحميل ===== -->
+  <div id="loadingScreen" class="splash-grad fixed inset-0 flex flex-col items-center justify-center z-50">
+    <div class="w-24 h-24 rounded-3xl bg-white flex items-center justify-center text-brand-blue font-black text-5xl shadow-2xl mb-6 anim-pop">D</div>
+    <div class="loader-ring mb-4"></div>
+    <p class="text-white font-bold text-lg">دايركت</p>
+    <p class="text-blue-200 text-xs mt-1">طلبك يوصل مباشرة</p>
+  </div>
+
+  <!-- ===== شاشة الدخول / التسجيل ===== -->
+  <div id="authScreen" class="hidden min-h-screen items-center justify-center p-4 splash-grad">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 anim-fade">
+      <div class="text-center mb-6">
+        <div class="w-20 h-20 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-brand-blue to-brand-lightBlue 
+                    flex items-center justify-center text-white font-black text-4xl shadow-lg">D</div>
+        <h1 class="text-2xl font-black text-brand-blue">دايركت</h1>
+        <p class="text-gray-500 text-sm mt-1" id="authSubtitle">سجّل برقم هاتفك فقط</p>
+      </div>
+
+      <div id="authError" class="hidden bg-red-50 text-red-600 p-3 rounded-xl mb-3 text-sm text-center font-bold"></div>
+
+      <form id="authForm" class="space-y-3">
+        <div class="relative">
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </span>
+          <input id="authPhone" type="tel" inputmode="numeric" required maxlength="11" dir="ltr"
+                 placeholder="01xxxxxxxxx"
+                 class="input-field pr-10 text-left" />
+        </div>
+        <div class="relative">
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </span>
+          <input id="authPassword" type="password" required minlength="6" dir="ltr"
+                 placeholder="كلمة المرور (6+ أحرف)"
+                 class="input-field pr-10 text-left" />
+        </div>
+
+        <button id="authSubmit" type="submit" class="btn-primary w-full text-white font-black py-3.5 rounded-xl">
+          دخول
+        </button>
+        <button type="button" id="toggleMode" class="w-full text-sm text-brand-lightBlue font-bold hover:underline py-1">
+          ليس لديك حساب؟ أنشئ حساباً
+        </button>
+      </form>
+
+      <p class="text-center text-[11px] text-gray-400 mt-5">
+        بالتسجيل أنت توافق على شروط الاستخدام وسياسة الخصوصية
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== الشاشة الرئيسية للتطبيق ===== -->
+  <div id="appScreen" class="hidden min-h-screen pb-28"
+       style="background:linear-gradient(180deg,#eef3ff 0%,#f8fafc 320px,#f8fafc 100%)">
+
+    <!-- هيدر -->
+    <header class="sticky top-0 z-40 backdrop-blur-xl bg-white/75 border-b border-white/40">
+      <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-blue to-brand-lightBlue 
+                      flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/30">D</div>
+          <div>
+            <p class="text-[11px] text-gray-500 leading-none">أهلاً بك</p>
+            <p id="welcomeName" class="font-extrabold text-brand-blue leading-tight text-sm">عميل دايركت</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="adminBtn" class="hidden w-10 h-10 rounded-xl bg-purple-100 text-purple-700 
+                  flex items-center justify-center active:scale-95 transition" title="لوحة التحكم">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </button>
+          <button id="logoutBtn" class="w-10 h-10 rounded-xl bg-red-50 text-red-500 
+                  flex items-center justify-center active:scale-95 transition" title="خروج">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 space-y-5 pt-4">
+
+      <!-- بطاقة العنوان -->
+      <div class="relative overflow-hidden rounded-3xl p-5 text-white shadow-xl"
+           style="background:linear-gradient(135deg,#0a2e6e 0%,#1d4ed8 100%)">
+        <div class="absolute -top-6 -left-6 w-28 h-28 rounded-full bg-white/10"></div>
+        <div class="absolute -bottom-10 -right-10 w-36 h-36 rounded-full bg-brand-orange/20"></div>
+        <div class="relative flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] text-blue-200 mb-1 flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              عنوان التوصيل
+            </p>
+            <p id="addressText" class="font-bold text-base truncate">لم تُضف عنواناً بعد</p>
+            <p id="villageText" class="text-xs text-blue-100 mt-0.5">داخل القرية</p>
+          </div>
+          <button id="editAddressBtn"
+                  class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center 
+                  active:scale-95 transition shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- صورة الغلاف -->
+      <div class="relative rounded-2xl overflow-hidden shadow-md bg-gradient-to-br from-brand-orange to-orange-400 p-5 text-white">
+        <div class="relative">
+          <p class="text-xs font-bold text-orange-100 mb-1">🎉 عرض اليوم</p>
+          <p class="text-lg font-black">توصيل مجاني للطلبات فوق 100 ج.م</p>
+          <p class="text-xs text-orange-100 mt-1">داخل القرية فقط</p>
+        </div>
+        <div class="absolute -bottom-8 -left-4 text-7xl opacity-20">🚚</div>
+      </div>
+
+      <!-- الأقسام -->
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-black text-brand-blue text-lg">الأقسام</h3>
+          <button class="text-xs text-brand-lightBlue font-bold">عرض الكل</button>
+        </div>
+        <div id="categoriesGrid" class="grid grid-cols-2 gap-3">
+          <!-- سيُملأ ديناميكياً -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- شريط التنقل السفلي -->
+    <nav class="fixed bottom-4 left-3 right-3 max-w-md mx-auto z-40">
+      <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-900/10 
+                  border border-gray-100 px-2 py-2 flex justify-around">
+        <a href="#" data-tab="home" class="nav-tab active flex flex-col items-center px-3 py-1.5 rounded-2xl transition-all">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="text-[10px] font-bold mt-0.5">الرئيسية</span>
+        </a>
+        <a href="#" data-tab="cart" class="nav-tab flex flex-col items-center px-3 py-1.5 rounded-2xl text-gray-400 transition-all">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          <span class="text-[10px] mt-0.5">السلة</span>
+        </a>
+        <a href="#" data-tab="orders" class="nav-tab flex flex-col items-center px-3 py-1.5 rounded-2xl text-gray-400 transition-all">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          <span class="text-[10px] mt-0.5">طلباتي</span>
+        </a>
+        <a href="#" data-tab="account" class="nav-tab flex flex-col items-center px-3 py-1.5 rounded-2xl text-gray-400 transition-all">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="text-[10px] mt-0.5">حسابي</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ===== شاشة لوحة التحكم (أدمن) ===== -->
+  <div id="adminScreen" class="hidden min-h-screen bg-gray-100 pb-10">
+    <header class="bg-gray-900 text-white p-4 sticky top-0 z-40 shadow-lg">
+      <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <button id="adminBack" class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+          </button>
+          <h1 class="font-black text-lg">لوحة التحكم</h1>
+        </div>
+        <span class="text-xs bg-purple-500/30 text-purple-200 px-2 py-1 rounded-lg font-bold">ADMIN</span>
+      </div>
+    </header>
+
+    <div class="max-w-4xl mx-auto px-4 pt-4">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        <button data-atab="users" class="admin-tab px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm whitespace-nowrap">المستخدمون</button>
+        <button data-atab="categories" class="admin-tab px-4 py-2 rounded-xl bg-white text-gray-700 font-bold text-sm whitespace-nowrap">الأقسام</button>
+        <button data-atab="products" class="admin-tab px-4 py-2 rounded-xl bg-white text-gray-700 font-bold text-sm whitespace-nowrap">المنتجات</button>
+        <button data-atab="orders" class="admin-tab px-4 py-2 rounded-xl bg-white text-gray-700 font-bold text-sm whitespace-nowrap">الطلبات</button>
+      </div>
+      <div id="adminContent" class="mt-4 space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ===== Bottom Sheet عام ===== -->
+  <div id="sheet" class="hidden fixed inset-0 z-[70]">
+    <div class="sheet-backdrop" onclick="closeSheet()"></div>
+    <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-w-2xl mx-auto anim-slide max-h-[85vh] overflow-y-auto">
+      <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+      <div id="sheetContent"></div>
+    </div>
+  </div>
+
+  <!-- ===== Toast ===== -->
+  <div id="toast"></div>
+
+  <!-- ===== Firebase Script ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import {
+      getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+      signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
+      collection, getDocs, addDoc, query, orderBy, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUn6EhDFqef6I81EhNTZTB-qZRQHl7a1Q",
+      authDomain: "direct-1-c93b9.firebaseapp.com",
+      projectId: "direct-1-c93b9",
+      storageBucket: "direct-1-c93b9.firebasestorage.app",
+      messagingSenderId: "216801978683",
+      appId: "1:216801978683:web:1c00ec158a1e190a2baf1e"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    /* ============================================================
+       أدوات مساعدة
+    ============================================================ */
+    const $ = (id) => document.getElementById(id);
+
+    function showScreen(id) {
+      ["loadingScreen","authScreen","appScreen","adminScreen"].forEach(s => {
+        const el = $(s);
+        if (!el) return;
+        el.classList.add("hidden");
+        el.classList.remove("flex");
+      });
+      const target = $(id);
+      if (target) {
+        target.classList.remove("hidden");
+        if (id === "authScreen" || id === "loadingScreen") target.classList.add("flex");
+      }
+    }
+
+    let toastTimer;
+    function toast(msg, type = "") {
+      const t = $("toast");
+      t.textContent = msg;
+      t.className = "show " + type;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove("show"), 3000);
+    }
+
+    function showError(elId, msg) {
+      const el = $(elId);
+      el.textContent = msg;
+      el.classList.remove("hidden");
+      setTimeout(() => el.classList.add("hidden"), 5000);
+    }
+
+    window.openSheet  = () => $("sheet").classList.remove("hidden");
+    window.closeSheet = () => $("sheet").classList.add("hidden");
+
+    /* ============================================================
+       تحويل الهاتف إلى بريد داخلي (للتسجيل بـ Firebase Auth)
+    ============================================================ */
+    function phoneToEmail(phone) {
+      const clean = phone.replace(/\D/g, "").replace(/^20/, "0");
+      return `${clean}@direct.app`;
+    }
+
+    /* ============================================================
+       شاشة الدخول/التسجيل
+    ============================================================ */
+    let authMode = "login";
+
+    $("toggleMode").addEventListener("click", () => {
+      authMode = authMode === "login" ? "register" : "login";
+      $("authSubmit").textContent = authMode === "login" ? "دخول" : "إنشاء حساب";
+      $("toggleMode").textContent = authMode === "login"
+        ? "ليس لديك حساب؟ أنشئ حساباً"
+        : "لديك حساب؟ سجّل الدخول";
+      $("authSubtitle").textContent = authMode === "login"
+        ? "سجّل برقم هاتفك فقط"
+        : "أنشئ حساباً جديداً برقم هاتفك";
+    });
+
+    $("authForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const phone = $("authPhone").value.trim();
+      const pass  = $("authPassword").value;
+      const errEl = $("authError");
+      errEl.classList.add("hidden");
+
+      if (!/^01[0-9]{9}$/.test(phone)) {
+        showError("authError", "أدخل رقم هاتف مصري صحيح (11 رقم يبدأ بـ 01)");
+        return;
+      }
+      if (pass.length < 6) {
+        showError("authError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+        return;
+      }
+
+      const btn = $("authSubmit");
+      btn.disabled = true;
+      const oldTxt = btn.textContent;
+      btn.textContent = "جارٍ...";
+
+      try {
+        if (authMode === "login") {
+          await signInWithEmailAndPassword(auth, phoneToEmail(phone), pass);
+        } else {
+          const cred = await createUserWithEmailAndPassword(auth, phoneToEmail(phone), pass);
+          await setDoc(doc(db, "users", cred.user.uid), {
+            phone,
+            email: phoneToEmail(phone),
+            role: "customer",
+            name: "",
+            address: "",
+            village: "داخل القرية",
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (err) {
+        const msgs = {
+          "auth/user-not-found": "لا يوجد حساب بهذا الرقم",
+          "auth/wrong-password": "كلمة المرور غير صحيحة",
+          "auth/invalid-credential": "الرقم أو كلمة المرور غير صحيحة",
+          "auth/email-already-in-use": "هذا الرقم مسجّل بالفعل — سجّل الدخول",
+          "auth/weak-password": "كلمة المرور قصيرة",
+          "auth/network-request-failed": "تحقق من اتصال الإنترنت",
+          "auth/too-many-requests": "محاولات كثيرة — انتظر قليلاً"
+        };
+        showError("authError", msgs[err.code] || "حدث خطأ، حاول مجدداً");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = oldTxt;
+      }
+    });
+
+    /* ============================================================
+       مراقبة حالة المصادقة
+    ============================================================ */
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        showScreen("authScreen");
+        return;
+      }
+
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (!snap.exists()) {
+          showScreen("appScreen");
+          return;
+        }
+        const data = snap.data();
+
+        // اسم/رقم العرض
+        $("welcomeName").textContent = data.name || data.phone || "عميل دايركت";
+        $("addressText").textContent = data.address || "لم تُضف عنواناً بعد";
+        $("villageText").textContent = data.village || "داخل القرية";
+
+        // زر الأدمن
+        if (data.role === "admin") {
+          $("adminBtn").classList.remove("hidden");
+        } else {
+          $("adminBtn").classList.add("hidden");
+        }
+
+        showScreen("appScreen");
+        loadCategories();
+      } catch (e) {
+        console.error(e);
+        showScreen("appScreen");
+      }
+    });
+
+    /* ============================================================
+       تسجيل الخروج
+    ============================================================ */
+    $("logoutBtn").addEventListener("click", async () => {
+      if (confirm("هل تريد تسجيل الخروج؟")) {
+        await signOut(auth);
+        toast("تم تسجيل الخروج", "success");
+      }
+    });
+
+    /* ============================================================
+       تعديل العنوان
+    ============================================================ */
+    $("editAddressBtn").addEventListener("click", async () => {
+      if (!auth.currentUser) return;
+      let current = { address: "", village: "داخل القرية" };
+      try {
+        const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+        if (snap.exists()) current = snap.data();
+      } catch {}
+
+      $("sheetContent").innerHTML = `
+        <h3 class="text-lg font-black text-brand-blue mb-4">تعديل عنوان التوصيل</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs font-bold text-gray-600 mb-1 block">القرية / المنطقة</label>
+            <select id="sheetVillage" class="input-field">
+              <option ${current.village === "داخل القرية" ? "selected" : ""}>داخل القرية</option>
+              <option ${current.village === "خارج القرية" ? "selected" : ""}>خارج القرية</option>
+              <option ${current.village === "المدينة" ? "selected" : ""}>المدينة</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-gray-600 mb-1 block">العنوان بالتفصيل</label>
+            <textarea id="sheetAddress" rows="3" class="input-field resize-none"
+              placeholder="اسم الشارع، علامة مميزة...">${current.address || ""}</textarea>
+          </div>
+          <button id="saveAddressBtn" class="btn-primary w-full text-white font-black py-3.5 rounded-xl">
+            حفظ العنوان
+          </button>
+        </div>
+      `;
+      openSheet();
+
+      $("saveAddressBtn").addEventListener("click", async () => {
+        const address = $("sheetAddress").value.trim();
+        const village = $("sheetVillage").value;
+        if (!address) return toast("أدخل العنوان أولاً", "error");
+
+        const btn = $("saveAddressBtn");
+        btn.disabled = true; btn.textContent = "جارٍ الحفظ...";
+        try {
+          await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            address, village, updatedAt: serverTimestamp()
+          });
+          $("addressText").textContent = address;
+          $("villageText").textContent = village;
+          closeSheet();
+          toast("تم حفظ العنوان بنجاح", "success");
+        } catch (err) {
+          toast("فشل الحفظ: " + err.message, "error");
+        } finally {
+          btn.disabled = false; btn.textContent = "حفظ العنوان";
+        }
+      });
+    });
+
+    /* ============================================================
+       الأقسام (عرض في الرئيسية)
+    ============================================================ */
+    const DEFAULT_CATEGORIES = [
+      { name: "خضروات", subtitle: "طازج يومياً", icon: "🥬", color: "orange" },
+      { name: "لحوم",    subtitle: "بلدية",       icon: "🍗", color: "red" },
+      { name: "ألبان",   subtitle: "طازجة",       icon: "🥛", color: "blue" },
+      { name: "مخبوزات", subtitle: "يومية",       icon: "🍞", color: "amber" }
+    ];
+
+    async function loadCategories() {
+      const grid = $("categoriesGrid");
+      let cats = [];
+      try {
+        const snap = await getDocs(collection(db, "categories"));
+        cats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch {}
+
+      if (cats.length === 0) cats = DEFAULT_CATEGORIES;
+
+      grid.innerHTML = cats.map(c => `
+        <button class="card-hover bg-white rounded-2xl p-4 shadow-sm border border-gray-100 
+                flex items-center gap-3 text-right">
+          <div class="w-12 h-12 rounded-xl bg-${c.color || "orange"}-100 flex items-center justify-center text-2xl shrink-0">
+            ${c.icon || "📦"}
+          </div>
+          <div class="min-w-0">
+            <p class="font-bold text-sm text-gray-800 truncate">${c.name}</p>
+            <p class="text-xs text-gray-400 truncate">${c.subtitle || ""}</p>
+          </div>
+        </button>
+      `).join("");
+    }
+
+    /* ============================================================
+       لوحة تحكم الأدمن
+    ============================================================ */
+    let adminTab = "users";
+
+    $("adminBtn").addEventListener("click", () => {
+      showScreen("adminScreen");
+      loadAdminTab("users");
+    });
+
+    $("adminBack").addEventListener("click", () => {
+      showScreen("appScreen");
+    });
+
+    document.querySelectorAll(".admin-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".admin-tab").forEach(b => {
+          b.className = "admin-tab px-4 py-2 rounded-xl bg-white text-gray-700 font-bold text-sm whitespace-nowrap";
+        });
+        btn.className = "admin-tab px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm whitespace-nowrap";
+        loadAdminTab(btn.dataset.atab);
+      });
+    });
+
+    async function loadAdminTab(tab) {
+      adminTab = tab;
+      const c = $("adminContent");
+      c.innerHTML = "<p class='text-center text-gray-400 py-10'>جارٍ التحميل...</p>";
+      try {
+        if (tab === "users")      return renderAdminUsers();
+        if (tab === "categories") return renderAdminCategories();
+        if (tab === "products")   return renderAdminProducts();
+        if (tab === "orders")     return renderAdminOrders();
+      } catch (e) {
+        c.innerHTML = `<p class='text-red-500 text-center py-10'>خطأ: ${e.message}</p>`;
+      }
+    }
+
+    /* ---------- المستخدمون ---------- */
+    async function renderAdminUsers() {
+      const snap = await getDocs(collection(db, "users"));
+      const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const c = $("adminContent");
+
+      c.innerHTML = users.length === 0
+        ? "<p class='text-center text-gray-400 py-10'>لا يوجد مستخدمون</p>"
+        : users.map(u => `
+          <div class="bg-white rounded-2xl p-4 shadow-sm">
+            <div class="flex justify-between items-start mb-2 gap-3">
+              <div class="min-w-0">
+                <p class="font-bold text-gray-800 truncate" dir="ltr">${u.phone || u.email || "—"}</p>
+                <p class="text-xs text-gray-500 truncate">${u.address || "بدون عنوان"} — ${u.village || "—"}</p>
+              </div>
+              <span class="text-[10px] px-2 py-1 rounded-lg font-bold shrink-0 ${
+                u.role === "admin" ? "bg-purple-100 text-purple-700"
+                : u.role === "driver" ? "bg-green-100 text-green-700"
+                : "bg-blue-100 text-blue-700"
+              }">${u.role || "customer"}</span>
+            </div>
+            <div class="flex gap-2 mt-2 flex-wrap">
+              <button data-act="role" data-uid="${u.id}" data-role="${u.role || 'customer'}"
+                class="text-xs bg-gray-100 px-3 py-1.5 rounded-lg font-bold">تغيير الدور</button>
+              <button data-act="addr" data-uid="${u.id}"
+                class="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg font-bold">تعديل العنوان</button>
+              <button data-act="del" data-uid="${u.id}"
+                class="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg font-bold">حذف</button>
+            </div>
+          </div>
+        `).join("");
+
+      c.querySelectorAll("[data-act]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const uid = btn.dataset.uid;
+          const act = btn.dataset.act;
+          if (act === "role") {
+            const role = prompt("الدور الجديد (customer / admin / driver):", btn.dataset.role);
+            if (!role) return;
+            await updateDoc(doc(db, "users", uid), { role });
+            toast("تم تحديث الدور", "success");
+            loadAdminTab("users");
+          } else if (act === "del") {
+            if (!confirm("حذف بيانات المستخدم؟ (لن يُحذف من Auth)")) return;
+            await deleteDoc(doc(db, "users", uid));
+            toast("تم حذف البيانات", "success");
+            loadAdminTab("users");
+          } else if (act === "addr") {
+            const addr = prompt("العنوان الجديد:");
+            if (addr === null) return;
+            await updateDoc(doc(db, "users", uid), { address: addr });
+            toast("تم تحديث العنوان", "success");
+            loadAdminTab("users");
+          }
+        });
+      });
+    }
+
+    /* ---------- الأقسام ---------- */
+    async function renderAdminCategories() {
+      const snap = await getDocs(collection(db, "categories"));
+      const cats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const c = $("adminContent");
+
+      c.innerHTML = `
+        <button id="addCatBtn" class="w-full bg-green-500 text-white font-bold py-3 rounded-xl mb-3 active:scale-[0.98] transition">
+          + إضافة قسم
+        </button>
+        ${cats.map(cat => `
+          <div class="bg-white rounded-2xl p-4 shadow-sm flex justify-between items-center gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center text-xl shrink-0">${cat.icon || "📦"}</div>
+              <div class="min-w-0">
+                <p class="font-bold text-gray-800 truncate">${cat.name}</p>
+                <p class="text-xs text-gray-500 truncate">${cat.subtitle || ""}</p>
+              </div>
+            </div>
+            <div class="flex gap-1 shrink-0">
+              <button data-edit="${cat.id}" class="text-xs bg-gray-100 px-2 py-1 rounded">تعديل</button>
+              <button data-del="${cat.id}" class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">حذف</button>
+            </div>
+          </div>
+        `).join("") || "<p class='text-center text-gray-400 py-6'>لا توجد أقسام</p>"}
+      `;
+
+      $("addCatBtn").addEventListener("click", async () => {
+        const name = prompt("اسم القسم:");
+        if (!name) return;
+        const icon = prompt("أيقونة (إيموجي مثل 🥬):", "📦") || "📦";
+        const subtitle = prompt("وصف مختصر:", "") || "";
+        await addDoc(collection(db, "categories"), { name, icon, subtitle, color: "orange", createdAt: serverTimestamp() });
+        toast("تم إضافة القسم", "success");
+        loadAdminTab("categories");
+        loadCategories();
+      });
+
+      c.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", async () => {
+        const cat = cats.find(x => x.id === b.dataset.edit);
+        const name = prompt("الاسم:", cat.name);
+        if (!name) return;
+        const icon = prompt("الأيقونة:", cat.icon || "📦") || "📦";
+        const subtitle = prompt("الوصف:", cat.subtitle || "") || "";
+        await updateDoc(doc(db, "categories", cat.id), { name, icon, subtitle });
+        toast("تم التحديث", "success");
+        loadAdminTab("categories");
+        loadCategories();
+      }));
+
+      c.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async () => {
+        if (!confirm("حذف القسم؟")) return;
+        await deleteDoc(doc(db, "categories", b.dataset.del));
+        toast("تم الحذف", "success");
+        loadAdminTab("categories");
+        loadCategories();
+      }));
+    }
+
+    /* ---------- المنتجات ---------- */
+    async function renderAdminProducts() {
+      const snap = await getDocs(collection(db, "products"));
+      const prods = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const c = $("adminContent");
+
+      c.innerHTML = `
+        <button id="addProdBtn" class="w-full bg-green-500 text-white font-bold py-3 rounded-xl mb-3">
+          + إضافة منتج
+        </button>
+        ${prods.map(p => `
+          <div class="bg-white rounded-2xl p-4 shadow-sm">
+            <div class="flex justify-between items-start gap-3 mb-2">
+              <div class="min-w-0">
+                <p class="font-bold text-gray-800 truncate">${p.name}</p>
+                <p class="text-xs text-gray-500">${p.category || ""} — ${p.price || 0} ج.م</p>
+              </div>
+              <span class="text-[10px] px-2 py-1 rounded-lg font-bold ${p.available ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}">
+                ${p.available ? "متاح" : "مخفي"}
+              </span>
+            </div>
+            <div class="flex gap-1 mt-2">
+              <button data-edit="${p.id}" class="text-xs bg-gray-100 px-2 py-1 rounded">تعديل</button>
+              <button data-del="${p.id}" class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">حذف</button>
+            </div>
+          </div>
+        `).join("") || "<p class='text-center text-gray-400 py-6'>لا توجد منتجات</p>"}
+      `;
+
+      $("addProdBtn").addEventListener("click", async () => {
+        const name = prompt("اسم المنتج:");
+        if (!name) return;
+        const price = parseFloat(prompt("السعر:", "0")) || 0;
+        const category = prompt("القسم:", "") || "";
+        await addDoc(collection(db, "products"), {
+          name, price, category, available: true, createdAt: serverTimestamp()
+        });
+        toast("تم إضافة المنتج", "success");
+        loadAdminTab("products");
+      });
+
+      c.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", async () => {
+        const p = prods.find(x => x.id === b.dataset.edit);
+        const name = prompt("الاسم:", p.name); if (!name) return;
+        const price = parseFloat(prompt("السعر:", p.price || 0)) || 0;
+        await updateDoc(doc(db, "products", p.id), { name, price });
+        toast("تم التحديث", "success");
+        loadAdminTab("products");
+      }));
+
+      c.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async () => {
+        if (!confirm("حذف المنتج؟")) return;
+        await deleteDoc(doc(db, "products", b.dataset.del));
+        toast("تم الحذف", "success");
+        loadAdminTab("products");
+      }));
+    }
+
+    /* ---------- الطلبات ---------- */
+    async function renderAdminOrders() {
+      const snap = await getDocs(collection(db, "orders"));
+      const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const c = $("adminContent");
+
+      const statusMap = {
+        pending:    { label: "قيد الانتظار", cls: "bg-yellow-100 text-yellow-700" },
+        confirmed:  { label: "مؤكد",        cls: "bg-blue-100 text-blue-700" },
+        delivering: { label: "قيد التوصيل", cls: "bg-purple-100 text-purple-700" },
+        delivered:  { label: "تم التوصيل",  cls: "bg-green-100 text-green-700" },
+        cancelled:  { label: "ملغي",        cls: "bg-red-100 text-red-700" }
+      };
+
+      c.innerHTML = orders.length === 0
+        ? "<p class='text-center text-gray-400 py-10'>لا توجد طلبات</p>"
+        : orders.map(o => {
+          const st = statusMap[o.status || "pending"] || statusMap.pending;
+          return `
+            <div class="bg-white rounded-2xl p-4 shadow-sm">
+              <div class="flex justify-between items-start mb-2 gap-2">
+                <div class="min-w-0">
+                  <p class="font-bold text-gray-800 text-sm">#${o.id.slice(0,6)}</p>
+                  <p class="text-xs text-gray-500 truncate">${o.customerPhone || o.address || "—"}</p>
+                  <p class="text-xs text-gray-400">${o.total ? o.total + " ج.م" : ""}</p>
+                </div>
+                <span class="text-[10px] px-2 py-1 rounded-lg font-bold shrink-0 ${st.cls}">${st.label}</span>
+              </div>
+              <div class="flex gap-1 mt-2 flex-wrap">
+                <button data-status="confirmed"  data-id="${o.id}" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">تأكيد</button>
+                <button data-status="delivering" data-id="${o.id}" class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">توصيل</button>
+                <button data-status="delivered"  data-id="${o.id}" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">تم</button>
+                <button data-status="cancelled"  data-id="${o.id}" class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">إلغاء</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+      c.querySelectorAll("[data-status]").forEach(b => b.addEventListener("click", async () => {
+        await updateDoc(doc(db, "orders", b.dataset.id), {
+          status: b.dataset.status, updatedAt: serverTimestamp()
+        });
+        toast("تم تحديث الطلب", "success");
+        loadAdminTab("orders");
+      }));
+    }
+
+    /* ============================================================
+       شريط التنقل السفلي
+    ============================================================ */
+    document.querySelectorAll(".nav-tab").forEach(tab => {
+      tab.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.querySelectorAll(".nav-tab").forEach(t => {
+          t.classList.remove("active");
+          t.classList.add("text-gray-400");
+        });
+        tab.classList.add("active");
+        tab.classList.remove("text-gray-400");
+        const name = tab.dataset.tab;
+        if (name !== "home") toast("قريباً — " + tab.querySelector("span").textContent, "");
+      });
+    });
+
+  </script>
+</body>
+  </html>
